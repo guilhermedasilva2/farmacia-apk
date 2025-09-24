@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/app_routes.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -13,8 +13,21 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Timer(const Duration(seconds: 3), () {
-      Navigator.of(context).pushReplacementNamed(AppRoutes.ONBOARDING);
+    _initializeApp();
+  }
+
+  void _initializeApp() {
+    Future.microtask(() async {
+      final prefs = await SharedPreferences.getInstance();
+      final bool onboardingCompleted = prefs.getBool('onboarding_completed') ?? false;
+
+      if (!mounted) return;
+
+      if (onboardingCompleted) {
+        Navigator.of(context).pushReplacementNamed(AppRoutes.HOME);
+      } else {
+        Navigator.of(context).pushReplacementNamed(AppRoutes.ONBOARDING);
+      }
     });
   }
 
