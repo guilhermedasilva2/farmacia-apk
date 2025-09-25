@@ -1,4 +1,3 @@
-// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:meu_app_inicial/screens/home_screen.dart'; 
 import 'package:meu_app_inicial/screens/onboarding_screen.dart'; 
@@ -21,11 +20,11 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.teal, 
         useMaterial3: true,
       ),
-      initialRoute: AppRoutes.SPLASH,
+      initialRoute: AppRoutes.splash,
       routes: {
-        AppRoutes.SPLASH: (ctx) => const SplashScreen(),
-        AppRoutes.ONBOARDING: (ctx) => const OnboardingScreen(),
-        AppRoutes.HOME: (ctx) => const HomeScreen(),
+        AppRoutes.splash: (ctx) => const SplashScreen(),
+        AppRoutes.onboarding: (ctx) => const OnboardingScreen(),
+        AppRoutes.home: (ctx) => const HomeScreen(),
       },
     );
   }

@@ -20,13 +20,14 @@ class _SplashScreenState extends State<SplashScreen> {
     Future.microtask(() async {
       final prefs = await SharedPreferences.getInstance();
       final bool onboardingCompleted = prefs.getBool('onboarding_completed') ?? false;
+      await Future.delayed(const Duration(seconds: 2));
 
       if (!mounted) return;
 
       if (onboardingCompleted) {
-        Navigator.of(context).pushReplacementNamed(AppRoutes.HOME);
+        Navigator.of(context).pushReplacementNamed(AppRoutes.home);
       } else {
-        Navigator.of(context).pushReplacementNamed(AppRoutes.ONBOARDING);
+        Navigator.of(context).pushReplacementNamed(AppRoutes.onboarding);
       }
     });
   }

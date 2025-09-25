@@ -13,31 +13,30 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
   int _currentPage = 0;
-  // Variável para o consentimento de marketing, começa como 'false'.
   bool _marketingConsentGiven = false;
 
   final List<Map<String, String>> onboardingData = [
     {
       'title': 'Bem-vindo à PharmaConnect',
       'subtitle': 'Sua farmácia completa na palma da sua mão.',
-      'image': 'assets/images/PharmaConnect.png',
+      'image': 'assets/images/onboarding_illustration.png',
     },
     {
       'title': 'Como Funciona',
       'subtitle':
           'Navegue pelos produtos, adicione ao carrinho e receba em casa.',
-      'image': 'assets/images/PharmaConnect.png',
+      'image': 'assets/images/onboarding_illustration.png',
     },
     {
       'title': 'Decisão de Marketing',
       'subtitle':
-          'Receba promoções e novidades exclusivas. Você precisa aceitar para continuar.', // Subtítulo ajustado para clareza
-      'image': 'assets/images/PharmaConnect.png',
+          'Receba promoções e novidades exclusivas. Você precisa aceitar para continuar.',
+      'image': 'assets/images/onboarding_illustration.png',
     },
     {
       'title': 'Tudo Pronto!',
       'subtitle': 'Clique abaixo para começar a usar o aplicativo.',
-      'image': 'assets/images/PharmaConnect.png',
+      'image': 'assets/images/onboarding_illustration.png',
     }
   ];
 
@@ -47,7 +46,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     await prefs.setBool('marketing_consent', _marketingConsentGiven);
 
     if (mounted) {
-      Navigator.of(context).pushReplacementNamed(AppRoutes.HOME);
+      Navigator.of(context).pushReplacementNamed(AppRoutes.home);
     }
   }
 
@@ -60,7 +59,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     bool isLastPage = _currentPage == onboardingData.length - 1;
-    // Variável que identifica a página de consentimento (página de índice 2).
     bool isConsentPage = _currentPage == 2;
 
     return Scaffold(
@@ -74,7 +72,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Botão "Voltar"
                   Visibility(
                     visible: _currentPage > 0 && !isLastPage,
                     maintainSize: true,
@@ -89,7 +86,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           style: TextStyle(color: Colors.teal)),
                     ),
                   ),
-                  // Botão "Pular" (não aparece na tela de consentimento)
                   Visibility(
                     visible: !isLastPage && !isConsentPage,
                     maintainSize: true,
@@ -108,8 +104,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
             Expanded(
               child: PageView.builder(
-                // CÓDIGO CORRIGIDO 1: Bloqueia o deslize na página de consentimento.
-                // O usuário não pode mais arrastar para a próxima tela sem interagir.
                 physics: isConsentPage
                     ? const NeverScrollableScrollPhysics()
                     : const AlwaysScrollableScrollPhysics(),
@@ -126,8 +120,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Image.asset(onboardingData[index]['image']!,
-                            height: 150),
+                        ClipOval(
+                          child: Image.asset(
+                            onboardingData[index]['image']!,
+                            height: 150,
+                            width: 150,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
                         const SizedBox(height: 40),
                         Text(
                           onboardingData[index]['title']!,
@@ -141,8 +141,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           style: const TextStyle(fontSize: 16),
                           textAlign: TextAlign.center,
                         ),
-                        // Mostra o Checkbox apenas na página de consentimento
-                        if (index == 2) // Usar 'index' aqui é mais seguro dentro do builder
+                        if (index == 2) 
                           Padding(
                             padding: const EdgeInsets.only(top: 24.0),
                             child: Row(
@@ -171,7 +170,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 },
               ),
             ),
-            // Indicador de pontos
             Visibility(
               visible: !isLastPage,
               child: Padding(
@@ -202,9 +200,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       borderRadius: BorderRadius.circular(12)),
                   disabledBackgroundColor: Colors.grey.shade400,
                 ),
-                // CÓDIGO CORRIGIDO 2: Lógica do botão.
-                // Se for a página de consentimento E o consentimento não foi dado,
-                // o valor de onPressed será 'null', desabilitando o botão.
                 onPressed: (isConsentPage && !_marketingConsentGiven)
                     ? null
                     : () {
