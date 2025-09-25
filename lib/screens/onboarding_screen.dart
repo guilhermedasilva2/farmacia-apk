@@ -13,39 +13,36 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
   int _currentPage = 0;
-  // ALTERAÇÃO: Variável renomeada para refletir o consentimento de marketing.
-  // Começa como 'false' para atender ao requisito de "Opt-ins Desabilitados"[cite: 26].
+  // Variável para o consentimento de marketing, começa como 'false'.
   bool _marketingConsentGiven = false;
 
-  // ALTERAÇÃO: Conteúdo da página 3 (índice 2) atualizado para Consentimento de Marketing[cite: 74].
   final List<Map<String, String>> onboardingData = [
     {
-      'title': 'Bem-vindo à FarmaFox',
+      'title': 'Bem-vindo à PharmaConnect',
       'subtitle': 'Sua farmácia completa na palma da sua mão.',
-      'image': 'assets/images/FarmaFox.png',
+      'image': 'assets/images/PharmaConnect.png',
     },
     {
       'title': 'Como Funciona',
       'subtitle':
           'Navegue pelos produtos, adicione ao carrinho e receba em casa.',
-      'image': 'assets/images/FarmaFox.png',
+      'image': 'assets/images/PharmaConnect.png',
     },
     {
-      'title': 'Decisão de Marketing', // Título alterado.
+      'title': 'Decisão de Marketing',
       'subtitle':
-          'Receba promoções e novidades exclusivas. Você pode alterar essa preferência a qualquer momento.', // Subtítulo alterado.
-      'image': 'assets/images/FarmaFox.png',
+          'Receba promoções e novidades exclusivas. Você precisa aceitar para continuar.', // Subtítulo ajustado para clareza
+      'image': 'assets/images/PharmaConnect.png',
     },
     {
       'title': 'Tudo Pronto!',
       'subtitle': 'Clique abaixo para começar a usar o aplicativo.',
-      'image': 'assets/images/FarmaFox.png',
+      'image': 'assets/images/PharmaConnect.png',
     }
   ];
 
   void _finishOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
-    // ALTERAÇÃO: Salva as duas chaves de forma separada, como pedido no documento[cite: 30, 102, 104].
     await prefs.setBool('onboarding_completed', true);
     await prefs.setBool('marketing_consent', _marketingConsentGiven);
 
@@ -63,7 +60,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     bool isLastPage = _currentPage == onboardingData.length - 1;
-    // ALTERAÇÃO: A variável foi renomeada para maior clareza.
+    // Variável que identifica a página de consentimento (página de índice 2).
     bool isConsentPage = _currentPage == 2;
 
     return Scaffold(
@@ -77,7 +74,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Lógica do botão "Voltar" permanece a mesma, está correta[cite: 95].
+                  // Botão "Voltar"
                   Visibility(
                     visible: _currentPage > 0 && !isLastPage,
                     maintainSize: true,
@@ -92,7 +89,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           style: TextStyle(color: Colors.teal)),
                     ),
                   ),
-                  // Lógica do botão "Pular" permanece a mesma, está correta[cite: 94].
+                  // Botão "Pular" (não aparece na tela de consentimento)
                   Visibility(
                     visible: !isLastPage && !isConsentPage,
                     maintainSize: true,
@@ -111,8 +108,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
             Expanded(
               child: PageView.builder(
-                // ALTERAÇÃO: Bloqueio de gesto removido, pois a página de consentimento é opcional.
-                physics: const AlwaysScrollableScrollPhysics(),
+                // CÓDIGO CORRIGIDO 1: Bloqueia o deslize na página de consentimento.
+                // O usuário não pode mais arrastar para a próxima tela sem interagir.
+                physics: isConsentPage
+                    ? const NeverScrollableScrollPhysics()
+                    : const AlwaysScrollableScrollPhysics(),
                 controller: _controller,
                 onPageChanged: (index) {
                   setState(() {
@@ -141,8 +141,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           style: const TextStyle(fontSize: 16),
                           textAlign: TextAlign.center,
                         ),
-                        // ALTERAÇÃO: Lógica para exibir o Checkbox na página de consentimento.
-                        if (isConsentPage)
+                        // Mostra o Checkbox apenas na página de consentimento
+                        if (index == 2) // Usar 'index' aqui é mais seguro dentro do builder
                           Padding(
                             padding: const EdgeInsets.only(top: 24.0),
                             child: Row(
@@ -159,7 +159,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   activeColor: Colors.teal,
                                 ),
                                 const Flexible(
-                                  // ALTERAÇÃO: Texto do consentimento.
                                   child: Text(
                                       'Eu aceito receber comunicações de marketing.'),
                                 ),
@@ -172,7 +171,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 },
               ),
             ),
-            // Lógica do DotsIndicator permanece a mesma, está correta[cite: 87].
+            // Indicador de pontos
             Visibility(
               visible: !isLastPage,
               child: Padding(
@@ -203,19 +202,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       borderRadius: BorderRadius.circular(12)),
                   disabledBackgroundColor: Colors.grey.shade400,
                 ),
-                // ALTERAÇÃO: Lógica do onPressed simplificada. O botão não é mais desabilitado na página de consentimento.
-                onPressed: () {
-                  if (isLastPage) {
-                    _finishOnboarding();
-                  } else {
-                    _controller.nextPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
-                  }
-                },
+                // CÓDIGO CORRIGIDO 2: Lógica do botão.
+                // Se for a página de consentimento E o consentimento não foi dado,
+                // o valor de onPressed será 'null', desabilitando o botão.
+                onPressed: (isConsentPage && !_marketingConsentGiven)
+                    ? null
+                    : () {
+                        if (isLastPage) {
+                          _finishOnboarding();
+                        } else {
+                          _controller.nextPage(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                          );
+                        }
+                      },
                 child: Text(
-                  // ALTERAÇÃO: Texto do botão alterado para "Continuar" na página de consentimento.
                   isLastPage ? 'Ir para o Acesso' : 'Continuar',
                 ),
               ),

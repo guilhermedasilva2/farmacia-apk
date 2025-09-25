@@ -21,7 +21,7 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         // Adicionado 'const' ao texto do título
-        title: const Text('FarmaFox'),
+        title: const Text('PharmaConnect'),
         backgroundColor: Colors.teal,
         foregroundColor: Colors.white,
       ),
@@ -34,7 +34,7 @@ class HomeScreen extends StatelessWidget {
             children: [
               // Adicionado 'const' ao texto
               const Text(
-                'Bem-vindo à FarmaFox!',
+                'Bem-vindo à PharmaConnect!',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               // Adicionado 'const' ao SizedBox
@@ -46,7 +46,7 @@ class HomeScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: ListTile(
-                  leading: Image.asset('assets/images/FarmaFox.png', width: 40),
+                  leading: Image.asset('assets/images/PharmaConnect.png', width: 40),
                   // Adicionado 'const' aos textos
                   title: const Text('Confira nossos produtos'),
                   subtitle: const Text('Clique para explorar a farmácia online'),

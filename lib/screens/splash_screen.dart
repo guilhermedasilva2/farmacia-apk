@@ -40,12 +40,12 @@ class _SplashScreenState extends State<SplashScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Image.asset('assets/images/FarmaFox.png', width: 180),
+              Image.asset('assets/images/PharmaConnect.png', width: 180),
               const SizedBox(height: 24),
               const CircularProgressIndicator(color: Colors.teal),
               const SizedBox(height: 16),
               const Text(
-                'Carregando FarmaFox...',
+                'Carregando PharmaConnect...',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
               ),
             ],
