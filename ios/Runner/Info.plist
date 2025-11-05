@@ -47,5 +47,9 @@
 		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<key>NSCameraUsageDescription</key>
+		<string>Precisamos da câmera para tirar sua foto de perfil.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>Precisamos acessar sua galeria para escolher uma foto de perfil.</string>
 	</dict>
 </plist>
