@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:dots_indicator/dots_indicator.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+// removed unused shared_preferences import
+import 'package:flutter/services.dart';
+import 'package:meu_app_inicial/services/policy_service.dart';
+import 'package:meu_app_inicial/services/prefs_service.dart';
+import 'package:meu_app_inicial/services/consent_service.dart';
 import '../utils/app_routes.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -13,7 +17,11 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
   int _currentPage = 0;
-  bool _marketingConsentGiven = false;
+  bool _finalAcknowledge = false;
+  bool _initialized = false;
+  late PrefsService _prefsService;
+  late PolicyService _policyService;
+  late ConsentService _consentService;
 
   final List<Map<String, String>> onboardingData = [
     {
@@ -28,26 +36,40 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       'image': 'assets/images/onboarding_illustration.png',
     },
     {
-      'title': 'Decisão de Marketing',
-      'subtitle':
-          'Receba promoções e novidades exclusivas. Você precisa aceitar para continuar.',
+      'title': 'Políticas e Termos',
+      'subtitle': 'Leia até o final e confirme para continuar.',
       'image': 'assets/images/onboarding_illustration.png',
     },
-    {
-      'title': 'Tudo Pronto!',
-      'subtitle': 'Clique abaixo para começar a usar o aplicativo.',
-      'image': 'assets/images/onboarding_illustration.png',
-    }
   ];
 
-  void _finishOnboarding() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('onboarding_completed', true);
-    await prefs.setBool('marketing_consent', _marketingConsentGiven);
+  @override
+  void initState() {
+    super.initState();
+    PrefsService.create().then((prefs) {
+      _prefsService = prefs;
+      _policyService = PolicyService(prefsService: _prefsService, privacyVersion: 1, termsVersion: 1);
+      _consentService = ConsentService(prefsService: _prefsService, currentConsentVersion: 1);
+      setState(() => _initialized = true);
+    });
+  }
 
-    if (mounted) {
-      Navigator.of(context).pushReplacementNamed(AppRoutes.home);
-    }
+  Future<void> _openPolicy(PolicyDocument doc) async {
+    final result = await Navigator.of(context).pushNamed(
+      AppRoutes.policy,
+      arguments: {'doc': doc == PolicyDocument.privacy ? 'privacy' : 'terms'},
+    );
+    if (result == true) setState(() {});
+  }
+
+  Future<void> _finishOnboarding() async {
+    final privacyRead = _initialized && _policyService.isRead(PolicyDocument.privacy);
+    final termsRead = _initialized && _policyService.isRead(PolicyDocument.terms);
+    if (!(privacyRead && termsRead && _finalAcknowledge)) return;
+
+    await _consentService.acceptConsent();
+    await _prefsService.setOnboardingCompleted(true);
+    if (!mounted) return;
+    Navigator.of(context).pushReplacementNamed(AppRoutes.home);
   }
 
   @override
@@ -60,6 +82,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     bool isLastPage = _currentPage == onboardingData.length - 1;
     bool isConsentPage = _currentPage == 2;
+    final bool privacyRead = _initialized && _policyService.isRead(PolicyDocument.privacy);
+    final bool termsRead = _initialized && _policyService.isRead(PolicyDocument.terms);
+    final bool canAccept = isConsentPage ? (privacyRead && termsRead && _finalAcknowledge) : true;
 
     return Scaffold(
       backgroundColor: Colors.teal.shade50,
@@ -141,25 +166,51 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           style: const TextStyle(fontSize: 16),
                           textAlign: TextAlign.center,
                         ),
-                        if (index == 2) 
+                        if (index == 2)
                           Padding(
                             padding: const EdgeInsets.only(top: 24.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                Checkbox(
-                                  value: _marketingConsentGiven,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _marketingConsentGiven = value ?? false;
-                                    });
-                                  },
-                                  activeColor: Colors.teal,
+                                Card(
+                                  child: ListTile(
+                                    leading: Icon(privacyRead ? Icons.check_circle : Icons.privacy_tip_outlined,
+                                        color: privacyRead ? Colors.green : null),
+                                    title: const Text('Política de Privacidade (LGPD)'),
+                                    subtitle: Text(privacyRead ? 'Lido' : 'Toque para ler (role até o final)'),
+                                    onTap: () => _openPolicy(PolicyDocument.privacy),
+                                    trailing: const Icon(Icons.chevron_right),
+                                  ),
                                 ),
-                                const Flexible(
-                                  child: Text(
-                                      'Eu aceito receber comunicações de marketing.'),
+                                const SizedBox(height: 8),
+                                Card(
+                                  child: ListTile(
+                                    leading: Icon(termsRead ? Icons.check_circle : Icons.article_outlined,
+                                        color: termsRead ? Colors.green : null),
+                                    title: const Text('Termos de Uso'),
+                                    subtitle: Text(termsRead ? 'Lido' : 'Toque para ler (role até o final)'),
+                                    onTap: () => _openPolicy(PolicyDocument.terms),
+                                    trailing: const Icon(Icons.chevron_right),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                CheckboxListTile(
+                                  value: _finalAcknowledge,
+                                  onChanged: (v) => setState(() => _finalAcknowledge = v ?? false),
+                                  title: const Text('Confirmo que li os documentos acima e concordo com os termos.'),
+                                  controlAffinity: ListTileControlAffinity.leading,
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                                const SizedBox(height: 8),
+                                ElevatedButton.icon(
+                                  onPressed: () => SystemNavigator.pop(),
+                                  icon: const Icon(Icons.close),
+                                  label: const Text('Recusar e sair do app'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.redAccent,
+                                    foregroundColor: Colors.white,
+                                    minimumSize: const Size(double.infinity, 48),
+                                  ),
                                 ),
                               ],
                             ),
@@ -200,9 +251,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       borderRadius: BorderRadius.circular(12)),
                   disabledBackgroundColor: Colors.grey.shade400,
                 ),
-                onPressed: (isConsentPage && !_marketingConsentGiven)
-                    ? null
-                    : () {
+                onPressed: (!isConsentPage || canAccept)
+                    ? () {
                         if (isLastPage) {
                           _finishOnboarding();
                         } else {
@@ -211,10 +261,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             curve: Curves.easeInOut,
                           );
                         }
-                      },
-                child: Text(
-                  isLastPage ? 'Ir para o Acesso' : 'Continuar',
-                ),
+                      }
+                    : null,
+                child: Text(isConsentPage && isLastPage ? 'Aceitar e continuar' : 'Continuar'),
               ),
             ),
           ],

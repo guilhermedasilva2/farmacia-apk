@@ -145,6 +145,15 @@ class _UserDrawerState extends State<UserDrawer> {
             ),
             const Divider(height: 1),
             ListTile(
+              leading: const Icon(Icons.policy_outlined),
+              title: const Text('Políticas e Termos'),
+              subtitle: const Text('Leia novamente'),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pushNamed('/policy', arguments: {'doc': 'privacy'});
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.person_outline),
               title: const Text('Alterar nome'),
               onTap: () async {

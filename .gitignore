@@ -43,3 +43,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Project docs not to commit
+082-Modelo-DTO-e-Mapeamento.pdf
