@@ -7,6 +7,7 @@ class MedicationReminder extends Equatable {
     this.dosage = '',
     this.notes = '',
     required this.scheduledAt,
+    this.isTaken = false,
   });
 
   final String id;
@@ -14,6 +15,7 @@ class MedicationReminder extends Equatable {
   final String dosage;
   final String notes;
   final DateTime scheduledAt;
+  final bool isTaken;
 
   bool get isPersisted => id.isNotEmpty;
 
@@ -25,6 +27,7 @@ class MedicationReminder extends Equatable {
     String? dosage,
     String? notes,
     DateTime? scheduledAt,
+    bool? isTaken,
   }) {
     return MedicationReminder(
       id: id ?? this.id,
@@ -32,11 +35,12 @@ class MedicationReminder extends Equatable {
       dosage: dosage ?? this.dosage,
       notes: notes ?? this.notes,
       scheduledAt: scheduledAt ?? this.scheduledAt,
+      isTaken: isTaken ?? this.isTaken,
     );
   }
 
   @override
-  List<Object?> get props => [id, medicationName, dosage, notes, scheduledAt];
+  List<Object?> get props => [id, medicationName, dosage, notes, scheduledAt, isTaken];
 }
 
 

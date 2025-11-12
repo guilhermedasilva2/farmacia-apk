@@ -19,18 +19,37 @@ void main() {
         dosage: '1 comprimido',
         notes: 'Após refeições',
         scheduledAt: DateTime(2025, 1, 1, 8, 0),
+        isTaken: false,
       ),
     );
 
     expect(reminder.id.isNotEmpty, true);
 
     await repository.upsertReminder(
-      reminder.copyWith(notes: 'Após café da manhã'),
+      reminder.copyWith(notes: 'Após café da manhã', isTaken: true),
     );
 
     final all = await repository.listReminders();
     expect(all.length, 1);
     expect(all.first.notes, 'Após café da manhã');
+    expect(all.first.isTaken, true);
+  });
+
+  test('SharedPreferencesMedicationReminderRepository deletes reminders', () async {
+    final repository = await SharedPreferencesMedicationReminderRepository.create();
+    final reminder = await repository.upsertReminder(
+      MedicationReminder(
+        id: '',
+        medicationName: 'Antibiótico',
+        dosage: '',
+        notes: '',
+        scheduledAt: DateTime(2025, 1, 1, 9, 0),
+      ),
+    );
+
+    await repository.deleteReminder(reminder.id);
+    final all = await repository.listReminders();
+    expect(all, isEmpty);
   });
 }
 

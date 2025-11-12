@@ -15,6 +15,7 @@ class MedicationReminderMapper {
       dosage: (dto.dosage ?? '').trim(),
       notes: (dto.notes ?? '').trim(),
       scheduledAt: scheduledAt,
+      isTaken: dto.isTaken ?? false,
     );
   }
 
@@ -25,6 +26,7 @@ class MedicationReminderMapper {
       dosage: entity.dosage.isEmpty ? null : entity.dosage,
       notes: entity.notes.isEmpty ? null : entity.notes,
       scheduledAtIso: entity.scheduledAt.toIso8601String(),
+      isTaken: entity.isTaken,
     );
   }
 }

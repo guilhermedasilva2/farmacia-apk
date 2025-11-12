@@ -15,6 +15,11 @@ class FakeMedicationRepository implements MedicationReminderRepository {
     saved = reminder.id.isEmpty ? reminder.copyWith(id: 'generated') : reminder;
     return saved!;
   }
+
+  @override
+  Future<void> deleteReminder(String id) async {
+    if (saved?.id == id) saved = null;
+  }
 }
 
 void main() {
@@ -41,7 +46,8 @@ void main() {
             .having((s) => s.status, 'status', MedicationReminderFormStatus.submitting),
         isA<MedicationReminderFormState>()
             .having((s) => s.status, 'status', MedicationReminderFormStatus.success)
-            .having((s) => s.savedReminder?.medicationName, 'saved', 'Dipirona'),
+            .having((s) => s.savedReminder?.medicationName, 'saved', 'Dipirona')
+            .having((s) => s.savedReminder?.isTaken, 'isTaken', false),
       ],
     );
   });

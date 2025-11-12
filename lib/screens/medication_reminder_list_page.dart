@@ -14,7 +14,8 @@ class MedicationReminderListPage extends StatefulWidget {
 class _MedicationReminderListPageState extends State<MedicationReminderListPage>
     with SingleTickerProviderStateMixin {
   late final InMemoryMedicationReminderRepository _repository;
-  final List<MedicationReminder> _items = [];
+  List<MedicationReminder> _activeReminders = [];
+  List<MedicationReminder> _takenReminders = [];
   bool _showTips = true;
   bool _showOverlay = true;
 
@@ -48,6 +49,7 @@ class _MedicationReminderListPageState extends State<MedicationReminderListPage>
       if (_showTips) {
         _fabController.forward();
       }
+      _refreshReminders();
     });
   }
 
@@ -58,26 +60,41 @@ class _MedicationReminderListPageState extends State<MedicationReminderListPage>
   }
 
   Future<void> _createReminder() async {
-    final reminder = await showMedicationReminderFormDialog(
-      context,
-      repository: _repository,
-    );
+    final reminder = await showMedicationReminderFormDialog(context, repository: _repository);
     if (reminder == null) return;
 
-    final updated = await _repository.listReminders();
-    setState(() {
-      _items
-        ..clear()
-        ..addAll(updated.reversed); // puts newest on top (in-memory order ascending)
-      _dismissTips();
-      _showOverlay = false;
-    });
+    await _refreshReminders();
+    _dismissTips();
+    setState(() => _showOverlay = false);
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lembrete de "${reminder.medicationName}" adicionado!')),
       );
     }
+  }
+
+  Future<void> _refreshReminders() async {
+    final list = await _repository.listReminders();
+    if (!mounted) return;
+    setState(() {
+      _activeReminders = list.where((element) => !element.isTaken).toList(growable: false);
+      _takenReminders = list.where((element) => element.isTaken).toList(growable: false);
+    });
+  }
+
+  Future<void> _toggleReminder(MedicationReminder reminder, bool value) async {
+    await _repository.upsertReminder(reminder.copyWith(isTaken: value));
+    await _refreshReminders();
+  }
+
+  Future<void> _deleteReminder(MedicationReminder reminder) async {
+    await _repository.deleteReminder(reminder.id);
+    await _refreshReminders();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Lembrete de "${reminder.medicationName}" removido.')),
+    );
   }
 
   void _dismissTips() {
@@ -90,7 +107,7 @@ class _MedicationReminderListPageState extends State<MedicationReminderListPage>
 
   @override
   Widget build(BuildContext context) {
-    final emptyState = _items.isEmpty;
+    final emptyState = _activeReminders.isEmpty && _takenReminders.isEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -106,29 +123,41 @@ class _MedicationReminderListPageState extends State<MedicationReminderListPage>
                 ? _EmptyState(
                     onAdd: _createReminder,
                   )
-                : ListView.builder(
+                : ListView(
                     padding: const EdgeInsets.all(16),
-                    itemCount: _items.length,
-                    itemBuilder: (context, index) {
-                      final reminder = _items[index];
-                      final time = TimeOfDay.fromDateTime(reminder.scheduledAt).format(context);
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        child: ListTile(
-                          leading: const Icon(Icons.alarm, color: Colors.teal),
-                          title: Text(reminder.medicationName),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Horário: $time'),
-                              if (reminder.dosage.isNotEmpty) Text('Dosagem: ${reminder.dosage}'),
-                              if (reminder.notes.isNotEmpty)
-                                Text(reminder.notes, style: Theme.of(context).textTheme.bodySmall),
-                            ],
+                    children: [
+                      if (_activeReminders.isNotEmpty)
+                        ...[
+                          Text(
+                            'Próximos lembretes',
+                            style: Theme.of(context).textTheme.titleMedium,
                           ),
-                        ),
-                      );
-                    },
+                          const SizedBox(height: 8),
+                          ..._activeReminders.map(
+                            (reminder) => _ReminderTile(
+                              reminder: reminder,
+                              onToggle: (value) => _toggleReminder(reminder, value),
+                              onDelete: () => _deleteReminder(reminder),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      if (_takenReminders.isNotEmpty)
+                        ...[
+                          Text(
+                            'Já administrados',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          ..._takenReminders.map(
+                            (reminder) => _ReminderTile(
+                              reminder: reminder,
+                              onToggle: (value) => _toggleReminder(reminder, value),
+                              onDelete: () => _deleteReminder(reminder),
+                            ),
+                          ),
+                        ],
+                    ],
                   ),
           ),
           if (_showOverlay)
@@ -196,6 +225,65 @@ class _MedicationReminderListPageState extends State<MedicationReminderListPage>
           },
           icon: const Icon(Icons.add),
           label: const Text('Adicionar'),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReminderTile extends StatelessWidget {
+  const _ReminderTile({
+    required this.reminder,
+    required this.onToggle,
+    required this.onDelete,
+  });
+
+  final MedicationReminder reminder;
+  final ValueChanged<bool> onToggle;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final time = TimeOfDay.fromDateTime(reminder.scheduledAt).format(context);
+    return Dismissible(
+      key: ValueKey(reminder.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.redAccent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      onDismissed: (_) => onDelete(),
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 12),
+        child: ListTile(
+          leading: Checkbox(
+            value: reminder.isTaken,
+            onChanged: (value) => onToggle(value ?? false),
+          ),
+          title: Text(
+            reminder.medicationName,
+            style: reminder.isTaken
+                ? const TextStyle(decoration: TextDecoration.lineThrough, color: Colors.grey)
+                : null,
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Horário: $time'),
+              if (reminder.dosage.isNotEmpty) Text('Dosagem: ${reminder.dosage}'),
+              if (reminder.notes.isNotEmpty)
+                Text(
+                  reminder.notes,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+            ],
+          ),
         ),
       ),
     );

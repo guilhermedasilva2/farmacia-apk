@@ -5,6 +5,7 @@ class MedicationReminderDto {
     this.dosage,
     this.notes,
     required this.scheduledAtIso,
+    this.isTaken,
   });
 
   final String id;
@@ -12,6 +13,7 @@ class MedicationReminderDto {
   final String? dosage;
   final String? notes;
   final String scheduledAtIso;
+  final bool? isTaken;
 
   factory MedicationReminderDto.fromMap(Map<String, dynamic> map) {
     return MedicationReminderDto(
@@ -20,6 +22,7 @@ class MedicationReminderDto {
       dosage: map['dosage'] as String?,
       notes: map['notes'] as String?,
       scheduledAtIso: (map['scheduled_at'] ?? map['target_date'] ?? '').toString(),
+      isTaken: map['is_taken'] as bool?,
     );
   }
 
@@ -30,6 +33,7 @@ class MedicationReminderDto {
       'dosage': dosage,
       'notes': notes,
       'scheduled_at': scheduledAtIso,
+      'is_taken': isTaken,
     };
   }
 }

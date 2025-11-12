@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 abstract class MedicationReminderRepository {
   Future<List<MedicationReminder>> listReminders();
   Future<MedicationReminder> upsertReminder(MedicationReminder reminder);
+  Future<void> deleteReminder(String id);
 }
 
 class InMemoryMedicationReminderRepository implements MedicationReminderRepository {
@@ -21,7 +22,11 @@ class InMemoryMedicationReminderRepository implements MedicationReminderReposito
   @override
   Future<List<MedicationReminder>> listReminders() async {
     final list = _storage.values.toList(growable: false)
-      ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
+      ..sort((a, b) {
+        final takenComparison = (a.isTaken ? 1 : 0).compareTo(b.isTaken ? 1 : 0);
+        if (takenComparison != 0) return takenComparison;
+        return a.scheduledAt.compareTo(b.scheduledAt);
+      });
     return list;
   }
 
@@ -31,6 +36,11 @@ class InMemoryMedicationReminderRepository implements MedicationReminderReposito
     final normalized = reminder.copyWith(id: id);
     _storage[id] = normalized;
     return normalized;
+  }
+
+  @override
+  Future<void> deleteReminder(String id) async {
+    _storage.remove(id);
   }
 }
 
@@ -75,6 +85,15 @@ class SharedPreferencesMedicationReminderRepository implements MedicationReminde
         indexed.values.map((e) => MedicationReminderMapper.toDto(e).toMap()).toList(growable: false);
     await _prefs.setString(_cacheKey, jsonEncode(payload));
     return normalized;
+  }
+
+  @override
+  Future<void> deleteReminder(String id) async {
+    final current = await listReminders();
+    final remaining = current.where((reminder) => reminder.id != id).toList(growable: false);
+    final payload =
+        remaining.map((e) => MedicationReminderMapper.toDto(e).toMap()).toList(growable: false);
+    await _prefs.setString(_cacheKey, jsonEncode(payload));
   }
 }
 
