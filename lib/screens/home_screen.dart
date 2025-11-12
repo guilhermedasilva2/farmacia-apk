@@ -3,49 +3,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:meu_app_inicial/services/prefs_service.dart';
 import 'package:meu_app_inicial/services/consent_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:meu_app_inicial/widgets/medication_reminder_form_dialog.dart';
-import 'package:meu_app_inicial/models/medication_reminder.dart';
-import 'package:meu_app_inicial/repositories/medication_reminder_repository.dart';
+import 'package:meu_app_inicial/screens/medication_reminder_list_page.dart';
 import '../utils/app_routes.dart';
 import 'package:meu_app_inicial/widgets/user_drawer.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  SharedPreferencesMedicationReminderRepository? _reminderRepository;
-  List<MedicationReminder> _reminders = const [];
-  bool _isLoadingReminders = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _initReminderRepository();
-  }
-
-  Future<void> _initReminderRepository() async {
-    final repo = await SharedPreferencesMedicationReminderRepository.create();
-    if (!mounted) return;
-    setState(() {
-      _reminderRepository = repo;
-    });
-    await _loadReminders();
-  }
-
-  Future<void> _loadReminders() async {
-    final repo = _reminderRepository;
-    if (repo == null) return;
-    final data = await repo.listReminders();
-    if (!mounted) return;
-    setState(() {
-      _reminders = data;
-      _isLoadingReminders = false;
-    });
-  }
 
   Future<void> _resetOnboarding(BuildContext context) async {
     final navigator = Navigator.of(context);
@@ -89,16 +52,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _openMedicationReminderDialog(BuildContext context) async {
-    final result = await showMedicationReminderFormDialog(context);
-    if (result != null && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lembrete de "${result.medicationName}" salvo!')),
-      );
-      await _loadReminders();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -140,67 +93,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 child: ListTile(
                   leading: const Icon(Icons.medication_outlined, color: Colors.teal),
-                  title: const Text('Adicionar lembrete de medicação'),
-                  subtitle: const Text('Configure horários e doses para seus remédios'),
-                  trailing: const Icon(Icons.add),
-                  onTap: () => _openMedicationReminderDialog(context),
+                  title: const Text('Lembretes de medicação'),
+                  subtitle: const Text('Crie e visualize lembretes rápidos dos seus medicamentos'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const MedicationReminderListPage()),
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 12),
-              if (_isLoadingReminders)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: CircularProgressIndicator(),
-                )
-              else if (_reminders.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Column(
-                    children: const [
-                      Icon(Icons.notifications_none, size: 40, color: Colors.grey),
-                      SizedBox(height: 8),
-                      Text(
-                        'Nenhum lembrete de medicação cadastrado.',
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                )
-              else
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Seus lembretes de medicação',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    ..._reminders.map(
-                      (reminder) => Card(
-                        elevation: 1,
-                        child: ListTile(
-                          leading: const Icon(Icons.alarm, color: Colors.teal),
-                          title: Text(reminder.medicationName),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (reminder.dosage.isNotEmpty) Text('Dosagem: ${reminder.dosage}'),
-                              Text(
-                                'Horário: ${TimeOfDay.fromDateTime(reminder.scheduledAt).format(context)}',
-                              ),
-                              if (reminder.notes.isNotEmpty)
-                                Text(
-                                  reminder.notes,
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                ),
               Card(
                 elevation: 2,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

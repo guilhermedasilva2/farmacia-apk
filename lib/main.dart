@@ -5,6 +5,7 @@ import 'package:meu_app_inicial/screens/splash_screen.dart';
 import 'package:meu_app_inicial/screens/policy_viewer_screen.dart';
 import 'package:meu_app_inicial/screens/consent_screen.dart';
 import 'package:meu_app_inicial/screens/products_screen.dart';
+import 'package:meu_app_inicial/screens/medication_reminder_list_page.dart';
 import 'package:meu_app_inicial/utils/app_routes.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -41,6 +42,7 @@ class MyApp extends StatelessWidget {
         AppRoutes.products: (ctx) => const ProductsScreen(),
         AppRoutes.policy: (ctx) => const PolicyViewerScreen(),
         AppRoutes.consent: (ctx) => const ConsentScreen(),
+        AppRoutes.reminders: (ctx) => const MedicationReminderListPage(),
       },
     );
   }

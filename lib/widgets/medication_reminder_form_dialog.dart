@@ -7,14 +7,15 @@ import 'package:meu_app_inicial/repositories/medication_reminder_repository.dart
 Future<MedicationReminder?> showMedicationReminderFormDialog(
   BuildContext context, {
   MedicationReminder? initialReminder,
+  MedicationReminderRepository? repository,
 }) async {
-  final repository = await SharedPreferencesMedicationReminderRepository.create();
+  final repo = repository ?? await SharedPreferencesMedicationReminderRepository.create();
   return showDialog<MedicationReminder>(
     context: context,
     builder: (dialogContext) {
       return BlocProvider(
         create: (_) => MedicationReminderFormBloc(
-          repository: repository,
+          repository: repo,
           initialReminder: initialReminder,
         ),
         child: const MedicationReminderFormDialog(),

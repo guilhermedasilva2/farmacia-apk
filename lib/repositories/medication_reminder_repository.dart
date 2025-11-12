@@ -11,6 +11,29 @@ abstract class MedicationReminderRepository {
   Future<MedicationReminder> upsertReminder(MedicationReminder reminder);
 }
 
+class InMemoryMedicationReminderRepository implements MedicationReminderRepository {
+  InMemoryMedicationReminderRepository({List<MedicationReminder>? seed})
+      : _storage = {for (final reminder in seed ?? const []) reminder.id: reminder};
+
+  final Map<String, MedicationReminder> _storage;
+  static const _uuid = Uuid();
+
+  @override
+  Future<List<MedicationReminder>> listReminders() async {
+    final list = _storage.values.toList(growable: false)
+      ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
+    return list;
+  }
+
+  @override
+  Future<MedicationReminder> upsertReminder(MedicationReminder reminder) async {
+    final id = reminder.id.isEmpty ? _uuid.v4() : reminder.id;
+    final normalized = reminder.copyWith(id: id);
+    _storage[id] = normalized;
+    return normalized;
+  }
+}
+
 class SharedPreferencesMedicationReminderRepository implements MedicationReminderRepository {
   SharedPreferencesMedicationReminderRepository({required SharedPreferences prefs}) : _prefs = prefs;
 
