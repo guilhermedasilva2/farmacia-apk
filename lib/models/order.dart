@@ -31,5 +31,3 @@ class Order {
 
   double get total => items.fold(0.0, (sum, it) => sum + it.total);
 }
-
-

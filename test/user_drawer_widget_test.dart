@@ -19,7 +19,7 @@ void main() {
     // Open the drawer
     ScaffoldMessenger.of(tester.element(find.byType(Scaffold)));
     await tester.tap(find.byTooltip('Open navigation menu'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 200));
 
     expect(find.textContaining('U'), findsWidgets); // Fallback initials from 'Usuário'
   });
@@ -36,7 +36,7 @@ void main() {
 
     await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
     await tester.tap(find.byTooltip('Open navigation menu'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 200));
 
     // The CircleAvatar with backgroundImage doesn't expose a direct matcher; we at least ensure no initials text now
     expect(find.text('U'), findsNothing);

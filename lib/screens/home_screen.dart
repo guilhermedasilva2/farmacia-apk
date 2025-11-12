@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:meu_app_inicial/services/prefs_service.dart';
 import 'package:meu_app_inicial/services/consent_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:meu_app_inicial/widgets/daily_goal_entity_form_dialog.dart';
+import 'package:meu_app_inicial/widgets/medication_reminder_form_dialog.dart';
 import '../utils/app_routes.dart';
 import 'package:meu_app_inicial/widgets/user_drawer.dart';
 
@@ -52,11 +52,11 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _openDailyGoalDialog(BuildContext context) async {
-    final result = await showDailyGoalEntityFormDialog(context);
+  Future<void> _openMedicationReminderDialog(BuildContext context) async {
+    final result = await showMedicationReminderFormDialog(context);
     if (result != null && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Meta diária "${result.title}" salva!')),
+        SnackBar(content: Text('Lembrete de "${result.medicationName}" salvo!')),
       );
     }
   }
@@ -101,11 +101,11 @@ class HomeScreen extends StatelessWidget {
                 elevation: 3,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 child: ListTile(
-                  leading: const Icon(Icons.flag_outlined, color: Colors.teal),
-                  title: const Text('Adicionar meta diária'),
-                  subtitle: const Text('Defina objetivos de bem-estar para hoje'),
+                  leading: const Icon(Icons.medication_outlined, color: Colors.teal),
+                  title: const Text('Adicionar lembrete de medicação'),
+                  subtitle: const Text('Configure horários e doses para seus remédios'),
                   trailing: const Icon(Icons.add),
-                  onTap: () => _openDailyGoalDialog(context),
+                  onTap: () => _openMedicationReminderDialog(context),
                 ),
               ),
               const SizedBox(height: 12),
