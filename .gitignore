@@ -46,3 +46,4 @@ app.*.map.json
 
 # Project docs not to commit
 082-Modelo-DTO-e-Mapeamento.pdf
+pdf/

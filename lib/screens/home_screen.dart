@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:meu_app_inicial/services/prefs_service.dart';
 import 'package:meu_app_inicial/services/consent_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:meu_app_inicial/widgets/daily_goal_entity_form_dialog.dart';
 import '../utils/app_routes.dart';
 import 'package:meu_app_inicial/widgets/user_drawer.dart';
 
@@ -51,6 +52,15 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _openDailyGoalDialog(BuildContext context) async {
+    final result = await showDailyGoalEntityFormDialog(context);
+    if (result != null && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Meta diária "${result.title}" salva!')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -82,10 +92,20 @@ class HomeScreen extends StatelessWidget {
                   subtitle: const Text('Clique para explorar a farmácia online'),
                   trailing: const Icon(Icons.arrow_forward_ios),
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Tela de produtos ainda não implementada!')),
-                    );
+                    Navigator.of(context).pushNamed(AppRoutes.products);
                   },
+                ),
+              ),
+              const SizedBox(height: 12),
+              Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: ListTile(
+                  leading: const Icon(Icons.flag_outlined, color: Colors.teal),
+                  title: const Text('Adicionar meta diária'),
+                  subtitle: const Text('Defina objetivos de bem-estar para hoje'),
+                  trailing: const Icon(Icons.add),
+                  onTap: () => _openDailyGoalDialog(context),
                 ),
               ),
               const SizedBox(height: 12),
