@@ -24,6 +24,17 @@ class ProductMapper {
   static List<Product> fromDtoList(List<ProductDto> list) {
     return list.map(fromDto).toList(growable: false);
   }
+
+  static ProductDto toDto(Product entity) {
+    return ProductDto(
+      id: entity.id,
+      name: entity.name,
+      description: entity.description,
+      imageUrl: entity.imageUrl,
+      price: entity.price,
+      available: entity.available,
+    );
+  }
 }
 
 

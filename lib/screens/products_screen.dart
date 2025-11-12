@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:meu_app_inicial/dto/product_dto.dart';
 import 'package:meu_app_inicial/models/product.dart';
 import 'package:meu_app_inicial/repositories/product_repository.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProductsScreen extends StatefulWidget {
@@ -11,23 +13,38 @@ class ProductsScreen extends StatefulWidget {
 }
 
 class _ProductsScreenState extends State<ProductsScreen> {
-  late final ProductRepository _repository;
-  late final Future<List<Product>> _future;
+  ProductRepository? _repository;
+  Future<List<Product>>? _future;
 
   @override
   void initState() {
     super.initState();
+    _initRepository();
+  }
+
+  Future<void> _initRepository() async {
+    final local = await SharedPreferencesProductLocalDataSource.create();
+    ProductRemoteDataSource remote;
     try {
-      final client = Supabase.instance.client;
-      _repository = SupabaseProductRepository(client: client);
+      remote = SupabaseProductRemoteDataSource(client: Supabase.instance.client);
     } catch (_) {
-      _repository = MockProductRepository();
+      remote = _FallbackRemote();
     }
-    _future = _repository.fetchProducts();
+    final repo = CachedProductRepository(
+      remote: remote,
+      local: local,
+      fallback: const MockProductRepository(),
+    );
+    setState(() {
+      _repository = repo;
+      _future = repo.fetchProducts();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final future = _future;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Produtos'),
@@ -39,7 +56,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
               icon: const Icon(Icons.cloud_upload_outlined),
               onPressed: () async {
                 // Executa somente se houver ao menos 1 produto carregado
-                final snapshot = await _future;
+                if (future == null) return;
+                final snapshot = await future;
                 if (snapshot.isEmpty) return;
                 final first = snapshot.first;
                 if (first.id.isEmpty) return;
@@ -52,8 +70,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
             ),
         ],
       ),
-      body: FutureBuilder<List<Product>>(
-        future: _future,
+      body: future == null
+          ? const Center(child: CircularProgressIndicator())
+          : FutureBuilder<List<Product>>(
+        future: future,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
@@ -112,4 +132,9 @@ class _ProductsScreenState extends State<ProductsScreen> {
   }
 }
 
+
+class _FallbackRemote implements ProductRemoteDataSource {
+  @override
+  Future<List<ProductDto>> fetchAll() async => [];
+}
 

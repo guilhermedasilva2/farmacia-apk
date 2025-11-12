@@ -1,0 +1,93 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:meu_app_inicial/dto/product_dto.dart';
+import 'package:meu_app_inicial/models/product.dart';
+import 'package:meu_app_inicial/repositories/product_repository.dart';
+
+class FakeRemote implements ProductRemoteDataSource {
+  FakeRemote(this._dtos, {this.shouldThrow = false});
+
+  final List<ProductDto> _dtos;
+  final bool shouldThrow;
+
+  @override
+  Future<List<ProductDto>> fetchAll() async {
+    if (shouldThrow) throw Exception('remote error');
+    return _dtos;
+  }
+}
+
+class FakeLocal implements ProductLocalDataSource {
+  FakeLocal(this._storage);
+
+  final Map<String, ProductDto> _storage;
+
+  @override
+  Future<List<ProductDto>> readAll() async {
+    return _storage.values.toList(growable: false);
+  }
+
+  @override
+  Future<void> upsertAll(List<ProductDto> dtos) async {
+    for (final dto in dtos) {
+      _storage[dto.id] = dto;
+    }
+  }
+}
+
+class FakeFallback implements ProductRepository {
+  @override
+  Future<List<Product>> fetchProducts() async {
+    return const [
+      Product(
+        id: 'fallback',
+        name: 'Fallback',
+        description: '',
+        imageUrl: '',
+        price: 0,
+        available: true,
+      )
+    ];
+  }
+}
+
+void main() {
+  test('CachedProductRepository stores remote data into local cache', () async {
+    final storage = <String, ProductDto>{};
+    final repo = CachedProductRepository(
+      remote: FakeRemote([
+        const ProductDto(id: '1', name: 'Remote', description: null, imageUrl: null, price: 10, available: true),
+      ]),
+      local: FakeLocal(storage),
+    );
+
+    final products = await repo.fetchProducts();
+    expect(products.first.name, 'Remote');
+    expect(storage.containsKey('1'), true);
+  });
+
+  test('CachedProductRepository falls back to local cache when remote fails', () async {
+    final storage = <String, ProductDto>{
+      '1': const ProductDto(id: '1', name: 'Cached', description: null, imageUrl: null, price: 5, available: true),
+    };
+    final repo = CachedProductRepository(
+      remote: FakeRemote(const [], shouldThrow: true),
+      local: FakeLocal(storage),
+      fallback: FakeFallback(),
+    );
+
+    final products = await repo.fetchProducts();
+    expect(products.first.name, 'Cached');
+  });
+
+  test('CachedProductRepository uses fallback when everything fails', () async {
+    final repo = CachedProductRepository(
+      remote: FakeRemote(const [], shouldThrow: true),
+      local: FakeLocal({}),
+      fallback: FakeFallback(),
+    );
+
+    final products = await repo.fetchProducts();
+    expect(products.first.id, 'fallback');
+  });
+}
+
