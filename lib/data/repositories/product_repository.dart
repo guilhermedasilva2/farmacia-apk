@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 
 import 'package:meu_app_inicial/data/models/product_dto.dart';
 import 'package:meu_app_inicial/data/mappers/product_mapper.dart';
@@ -55,7 +56,8 @@ class CachedProductRepository implements ProductRepository {
         if (filteredDtos.isNotEmpty) {
           return ProductMapper.fromDtoList(filteredDtos);
         }
-      } catch (_) {
+      } catch (e) {
+        debugPrint('Error reading from local cache: $e');
         // ignore cache failures
       }
       return _fallback.fetchProducts(categoryId: categoryId);

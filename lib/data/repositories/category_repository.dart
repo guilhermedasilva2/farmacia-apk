@@ -22,6 +22,10 @@ class CategoryRepository {
         );
       }).toList().cast<Category>();
     } catch (e) {
+      debugPrint('Error fetching categories: $e');
+      if (e.toString().contains('AuthRetryableFetchException') || e.toString().contains('refresh_token_hmac_key')) {
+         debugPrint('Critical Auth Error: Token might be invalid. Consider signing out.');
+      }
       return [];
     }
   }
