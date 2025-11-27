@@ -8,6 +8,7 @@ import 'package:meu_app_inicial/core/services/cart_service.dart';
 import 'package:meu_app_inicial/core/utils/app_routes.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:meu_app_inicial/presentation/widgets/admin_product_form_dialog.dart';
+import 'package:meu_app_inicial/presentation/widgets/product_actions_dialog.dart';
 
 class ProductsScreen extends StatefulWidget {
   const ProductsScreen({super.key});
@@ -22,6 +23,11 @@ class _ProductsScreenState extends State<ProductsScreen> {
   final _roleService = UserRoleService();
   UserRole _currentRole = UserRole.visitor;
   final CartService _cartService = CartService();
+  
+  // Filtros e ordenação (Prompt 08)
+  String _sortBy = 'name';
+  bool _sortAscending = true;
+  bool _showOnlyAvailable = false;
 
   @override
   void initState() {
@@ -183,7 +189,71 @@ class _ProductsScreenState extends State<ProductsScreen> {
           );
         }
       }
+      }
     }
+
+  // Prompt 08: Pull-to-refresh
+  Future<void> _handleRefresh() async {
+    if (_repository == null) return;
+    try {
+      setState(() {
+        _future = _repository!.fetchProducts();
+      });
+      await _future;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Lista atualizada'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao atualizar: $e')),
+        );
+      }
+    }
+  }
+
+  // Prompt 08: Aplicar ordenação e filtros
+  List<Product> _applySortingAndFilters(List<Product> products) {
+    var filtered = products;
+
+    // Filtrar por disponibilidade
+    if (_showOnlyAvailable) {
+      filtered = filtered.where((p) => p.available && p.quantity > 0).toList();
+    }
+
+    // Ordenar
+    filtered.sort((a, b) {
+      int comparison;
+      switch (_sortBy) {
+        case 'price':
+          comparison = a.price.compareTo(b.price);
+          break;
+        case 'quantity':
+          comparison = a.quantity.compareTo(b.quantity);
+          break;
+        case 'name':
+        default:
+          comparison = a.name.toLowerCase().compareTo(b.name.toLowerCase());
+      }
+      return _sortAscending ? comparison : -comparison;
+    });
+
+    return filtered;
+  }
+
+  // Prompt 09: Mostrar diálogo de ações
+  void _showActionsDialog(Product product) {
+    ProductActionsDialog.show(
+      context,
+      product: product,
+      onEdit: () => _handleEdit(product),
+      onRemove: () => _handleDelete(product),
+    );
   }
 
   @override
@@ -196,6 +266,80 @@ class _ProductsScreenState extends State<ProductsScreen> {
         backgroundColor: Colors.teal,
         foregroundColor: Colors.white,
         actions: [
+          // Prompt 08: Ordenação
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.sort),
+            tooltip: 'Ordenar',
+            onSelected: (value) {
+              setState(() {
+                if (_sortBy == value) {
+                  _sortAscending = !_sortAscending;
+                } else {
+                  _sortBy = value;
+                  _sortAscending = true;
+                }
+              });
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'name',
+                child: Row(
+                  children: [
+                    Icon(
+                      _sortBy == 'name'
+                          ? (_sortAscending ? Icons.arrow_upward : Icons.arrow_downward)
+                          : Icons.sort_by_alpha,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text('Nome'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'price',
+                child: Row(
+                  children: [
+                    Icon(
+                      _sortBy == 'price'
+                          ? (_sortAscending ? Icons.arrow_upward : Icons.arrow_downward)
+                          : Icons.attach_money,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text('Preço'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'quantity',
+                child: Row(
+                  children: [
+                    Icon(
+                      _sortBy == 'quantity'
+                          ? (_sortAscending ? Icons.arrow_upward : Icons.arrow_downward)
+                          : Icons.inventory,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text('Estoque'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          // Prompt 08: Filtro de disponibilidade
+          IconButton(
+            icon: Icon(
+              _showOnlyAvailable ? Icons.filter_alt : Icons.filter_alt_outlined,
+            ),
+            tooltip: _showOnlyAvailable ? 'Mostrar todos' : 'Apenas disponíveis',
+            onPressed: () {
+              setState(() {
+                _showOnlyAvailable = !_showOnlyAvailable;
+              });
+            },
+          ),
           Stack(
             children: [
               IconButton(
@@ -287,20 +431,45 @@ class _ProductsScreenState extends State<ProductsScreen> {
           : null,
       body: future == null
           ? const Center(child: CircularProgressIndicator())
-          : FutureBuilder<List<Product>>(
-        future: future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Erro ao carregar: ${snapshot.error}'));
-          }
-          final products = snapshot.data ?? const <Product>[];
-          if (products.isEmpty) {
-            return const Center(child: Text('Nenhum produto disponível.'));
-          }
-          return ListView.separated(
+          : RefreshIndicator(
+              onRefresh: _handleRefresh,
+              child: FutureBuilder<List<Product>>(
+                future: future,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState != ConnectionState.done) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Erro ao carregar: ${snapshot.error}'));
+                  }
+                  
+                  // Aplicar filtros e ordenação (Prompt 08)
+                  final allProducts = snapshot.data ?? const <Product>[];
+                  final products = _applySortingAndFilters(allProducts);
+                  
+                  if (products.isEmpty) {
+                    return ListView(
+                      children: [
+                        const SizedBox(height: 100),
+                        Center(
+                          child: Column(
+                            children: [
+                              Icon(Icons.inbox, size: 64, color: Colors.grey[400]),
+                              const SizedBox(height: 16),
+                              Text(
+                                _showOnlyAvailable
+                                    ? 'Nenhum produto disponível no momento'
+                                    : 'Nenhum produto cadastrado',
+                                style: TextStyle(color: Colors.grey[600]),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                  
+                  return ListView.separated(
             padding: const EdgeInsets.all(12),
             itemCount: products.length,
             separatorBuilder: (_, __) => const SizedBox(height: 8),
@@ -335,10 +504,12 @@ class _ProductsScreenState extends State<ProductsScreen> {
                       child: Icon(Icons.medication, color: Colors.grey[600]),
                     );
 
-              return Card(
+              // Prompt 11: Swipe to dismiss (apenas para admins)
+              final cardWidget = Card(
                 clipBehavior: Clip.antiAlias,
                 child: InkWell(
                   onTap: () => _handleProductTap(p),
+                  onLongPress: () => _showActionsDialog(p), // Prompt 09: Long-press para ações
                   child: Padding(
                     padding: const EdgeInsets.all(12.0),
                     child: Row(
@@ -450,11 +621,78 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   ),
                 ),
               );
+
+              // Prompt 11: Retornar com Dismissible se for admin
+              if (_currentRole.canManageProducts) {
+                return Dismissible(
+                  key: Key(p.id),
+                  direction: DismissDirection.endToStart,
+                  confirmDismiss: (direction) async {
+                    return await showDialog<bool>(
+                      context: context,
+                      barrierDismissible: false, // ✅ Conforme prompt
+                      builder: (context) => AlertDialog(
+                        title: const Text('Remover Produto'),
+                        content: Text('Deseja remover "${p.name}"?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: const Text('NÃO'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.red,
+                            ),
+                            child: const Text('SIM'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  onDismissed: (direction) async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    try {
+                      await _repository!.deleteProduct(p.id);
+                      if (mounted) {
+                        messenger.showSnackBar(
+                          SnackBar(content: Text('${p.name} removido com sucesso')),
+                        );
+                        setState(() {
+                          _future = _repository!.fetchProducts();
+                        });
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        messenger.showSnackBar(
+                          SnackBar(content: Text('Erro ao remover: $e')),
+                        );
+                        setState(() {
+                          _future = _repository!.fetchProducts();
+                        });
+                      }
+                    }
+                  },
+                  background: Container(
+                    color: Colors.red,
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 20),
+                    child: const Icon(
+                      Icons.delete,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+                  ),
+                  child: cardWidget,
+                );
+              }
+              
+              return cardWidget;
             },
           );
         },
       ),
-    );
+    ));
   }
 }
 
