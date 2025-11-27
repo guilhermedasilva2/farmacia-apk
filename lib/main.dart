@@ -9,7 +9,7 @@ import 'package:meu_app_inicial/presentation/screens/medication_reminder_list_pa
 import 'package:meu_app_inicial/presentation/screens/auth_screen.dart';
 import 'package:meu_app_inicial/presentation/screens/admin_products_screen.dart';
 import 'package:meu_app_inicial/presentation/screens/admin_orders_screen.dart';
-import 'package:meu_app_inicial/presentation/screens/admin_categories_screen.dart';
+import 'package:meu_app_inicial/presentation/screens/categories_screen.dart';
 import 'package:meu_app_inicial/presentation/screens/cart_screen.dart';
 import 'package:meu_app_inicial/presentation/screens/product_details_screen.dart';
 import 'package:meu_app_inicial/core/utils/app_routes.dart';
@@ -53,7 +53,7 @@ class MyApp extends StatelessWidget {
         AppRoutes.auth: (ctx) => const AuthScreen(),
         AppRoutes.adminProducts: (ctx) => const AdminProductsScreen(),
         AppRoutes.adminOrders: (ctx) => const AdminOrdersScreen(),
-        AppRoutes.adminCategories: (ctx) => const AdminCategoriesScreen(),
+        AppRoutes.adminCategories: (ctx) => const CategoriesScreen(),
         AppRoutes.productDetails: (ctx) => const ProductDetailsScreen(),
       },
     );
