@@ -4,10 +4,9 @@ import 'package:meu_app_inicial/domain/entities/product.dart';
 import 'package:meu_app_inicial/domain/entities/user_role.dart';
 import 'package:meu_app_inicial/data/repositories/product_repository.dart';
 import 'package:meu_app_inicial/core/services/user_role_service.dart';
+import 'package:meu_app_inicial/core/services/cart_service.dart';
 import 'package:meu_app_inicial/core/utils/app_routes.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:meu_app_inicial/domain/entities/order.dart';
-import 'package:meu_app_inicial/data/repositories/order_repository.dart';
 import 'package:meu_app_inicial/presentation/widgets/admin_product_form_dialog.dart';
 
 class ProductsScreen extends StatefulWidget {
@@ -22,12 +21,20 @@ class _ProductsScreenState extends State<ProductsScreen> {
   Future<List<Product>>? _future;
   final _roleService = UserRoleService();
   UserRole _currentRole = UserRole.visitor;
+  final CartService _cartService = CartService();
 
   @override
   void initState() {
     super.initState();
     _initRepository();
     _loadUserRole();
+    _cartService.addListener(_onCartChanged);
+  }
+
+  void _onCartChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _loadUserRole() async {
@@ -58,11 +65,24 @@ class _ProductsScreenState extends State<ProductsScreen> {
     });
   }
 
-    Future<void> _handlePurchase(Product product) async {
+  @override
+  void dispose() {
+    _cartService.removeListener(_onCartChanged);
+    super.dispose();
+  }
+
+  void _handleProductTap(Product product) {
+    Navigator.of(context).pushNamed(
+      AppRoutes.productDetails,
+      arguments: product,
+    );
+  }
+
+  Future<void> _handlePurchase(Product product) async {
     if (!_currentRole.canPurchase) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Faça login para comprar produtos'),
+          content: const Text('Faça login para adicionar ao pedido'),
           action: SnackBarAction(
             label: 'Login',
             onPressed: () {
@@ -82,78 +102,20 @@ class _ProductsScreenState extends State<ProductsScreen> {
       return;
     }
 
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Confirmar Compra'),
-        content: Text('Deseja comprar 1x ${product.name} por R\$ ${product.price.toStringAsFixed(2)}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Comprar'),
-          ),
-        ],
+    // Adicionar ao carrinho/pedidos
+    _cartService.addToCart(product);
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${product.name} adicionado ao pedido'),
+        action: SnackBarAction(
+          label: 'Ver Pedidos',
+          onPressed: () {
+            Navigator.of(context).pushNamed(AppRoutes.orders);
+          },
+        ),
       ),
     );
-
-    if (confirm == true) {
-      try {
-        final currentUser = Supabase.instance.client.auth.currentUser;
-        if (currentUser == null) return;
-
-        final order = Order(
-          id: '',
-          customerId: currentUser.id,
-          items: [
-            OrderItem(
-              productId: product.id,
-              name: product.name,
-              quantity: 1,
-              unitPrice: product.price,
-            ),
-          ],
-          status: OrderStatus.pending,
-        );
-
-        final orderRepo = OrderRepository();
-        await orderRepo.createOrder(order);
-
-        // Atualizar estoque
-        if (_repository != null) {
-          final newQuantity = product.quantity - 1;
-          final dto = ProductDto(
-            id: product.id,
-            name: product.name,
-            description: product.description,
-            imageUrl: product.imageUrl,
-            price: product.price,
-            available: newQuantity > 0,
-            quantity: newQuantity,
-            categoryId: product.categoryId,
-          );
-          await _repository!.updateProduct(dto);
-          
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Compra realizada com sucesso!')),
-            );
-            setState(() {
-              _future = _repository!.fetchProducts();
-            });
-          }
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ao processar compra: $e')),
-          );
-        }
-      }
-    }
   }
 
   Future<void> _handleEdit(Product product) async {
@@ -234,6 +196,41 @@ class _ProductsScreenState extends State<ProductsScreen> {
         backgroundColor: Colors.teal,
         foregroundColor: Colors.white,
         actions: [
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.shopping_bag_outlined),
+                onPressed: () {
+                  Navigator.of(context).pushNamed(AppRoutes.orders);
+                },
+              ),
+              if (_cartService.itemCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 18,
+                      minHeight: 18,
+                    ),
+                    child: Text(
+                      '${_cartService.itemCount}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
           // Ação de debug: exemplo de upload de asset ao Storage e vincular ao primeiro produto
           if (!const bool.fromEnvironment('dart.vm.product'))
             IconButton(
@@ -339,113 +336,117 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     );
 
               return Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      leading,
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              p.name,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              p.description,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Text(
-                                  'R\$ ${p.price.toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.teal,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: p.available ? Colors.green[50] : Colors.red[50],
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: p.available ? Colors.green : Colors.red,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    p.available ? 'Disponível' : 'Indisponível',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: p.available ? Colors.green[700] : Colors.red[700],
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            // Botões de ação baseados no role
-                            if (_currentRole.canPurchase && p.available) ...[
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton.icon(
-                                  onPressed: () => _handlePurchase(p),
-                                  icon: const Icon(Icons.shopping_cart, size: 18),
-                                  label: const Text('Comprar'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.teal,
-                                    foregroundColor: Colors.white,
-                                  ),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: () => _handleProductTap(p),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        leading,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                p.name,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                            ],
-                            if (_currentRole.canManageProducts) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                p.description,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 8),
                               Row(
                                 children: [
-                                  Expanded(
-                                    child: OutlinedButton.icon(
-                                      onPressed: () => _handleEdit(p),
-                                      icon: const Icon(Icons.edit, size: 18),
-                                      label: const Text('Editar'),
+                                  Text(
+                                    'R\$ ${p.price.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.teal,
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: OutlinedButton.icon(
-                                      onPressed: () => _handleDelete(p),
-                                      icon: const Icon(Icons.delete, size: 18),
-                                      label: const Text('Excluir'),
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: Colors.red,
+                                  const SizedBox(width: 12),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: p.available ? Colors.green[50] : Colors.red[50],
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: p.available ? Colors.green : Colors.red,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      p.available ? 'Disponível' : 'Indisponível',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: p.available ? Colors.green[700] : Colors.red[700],
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ),
                                 ],
                               ),
+                              const SizedBox(height: 8),
+                              // Botões de ação baseados no role
+                              if (_currentRole.canPurchase && p.available) ...[
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton.icon(
+                                    onPressed: () => _handlePurchase(p),
+                                    icon: const Icon(Icons.shopping_cart, size: 18),
+                                    label: const Text('Comprar'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.teal,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                              if (_currentRole.canManageProducts) ...[
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        onPressed: () => _handleEdit(p),
+                                        icon: const Icon(Icons.edit, size: 18),
+                                        label: const Text('Editar'),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        onPressed: () => _handleDelete(p),
+                                        icon: const Icon(Icons.delete, size: 18),
+                                        label: const Text('Excluir'),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: Colors.red,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               );

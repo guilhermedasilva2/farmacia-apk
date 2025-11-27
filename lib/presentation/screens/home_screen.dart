@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:meu_app_inicial/core/services/prefs_service.dart';
 import 'package:meu_app_inicial/core/services/consent_service.dart';
+import 'package:meu_app_inicial/core/services/cart_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:meu_app_inicial/core/utils/app_routes.dart';
 import 'package:meu_app_inicial/presentation/widgets/user_drawer.dart';
@@ -12,8 +13,6 @@ import 'package:meu_app_inicial/data/repositories/product_repository.dart';
 import 'package:meu_app_inicial/data/models/product_dto.dart';
 import 'package:meu_app_inicial/domain/entities/category.dart';
 import 'package:meu_app_inicial/data/repositories/category_repository.dart';
-import 'package:meu_app_inicial/domain/entities/order.dart';
-import 'package:meu_app_inicial/data/repositories/order_repository.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -31,6 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _searchQuery = '';
   final CategoryRepository _categoryRepository = CategoryRepository();
   List<Category> _categories = [];
+  final CartService _cartService = CartService();
 
 
   @override
@@ -38,6 +38,24 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _initRepository();
     _loadCategories();
+    _cartService.addListener(_onCartChanged);
+    _setupAuthListener();
+  }
+
+  void _setupAuthListener() {
+    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      if (mounted) {
+        setState(() {
+          // Rebuild UI on auth change
+        });
+      }
+    });
+  }
+
+  void _onCartChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _loadCategories() async {
@@ -49,13 +67,14 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      // ignore error
+      debugPrint('Error loading categories in HomeScreen: $e');
     }
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _cartService.removeListener(_onCartChanged);
     super.dispose();
   }
 
@@ -134,12 +153,27 @@ class _HomeScreenState extends State<HomeScreen> {
     await _resetOnboarding();
   }
 
+  void _handleProductTap(Product product) {
+    Navigator.of(context).pushNamed(
+      AppRoutes.productDetails,
+      arguments: product,
+    );
+  }
+
   Future<void> _handlePurchase(Product product) async {
+    final session = Supabase.instance.client.auth.currentSession;
     final currentUser = Supabase.instance.client.auth.currentUser;
-    if (currentUser == null) {
+    
+    if (currentUser == null || session == null || session.isExpired) {
+      if (currentUser != null) {
+         await Supabase.instance.client.auth.signOut();
+      }
+      
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Faça login para comprar.')),
+        const SnackBar(content: Text('Faça login para adicionar ao pedido.')),
       );
+      Navigator.of(context).pushNamed(AppRoutes.auth);
       return;
     }
 
@@ -150,77 +184,19 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Confirmar Compra'),
-        content: Text('Deseja comprar 1x ${product.name} por R\$ ${product.price.toStringAsFixed(2)}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Comprar'),
-          ),
-        ],
+    _cartService.addToCart(product);
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${product.name} adicionado ao pedido'),
+        action: SnackBarAction(
+          label: 'Ver Pedidos',
+          onPressed: () {
+            Navigator.of(context).pushNamed(AppRoutes.orders);
+          },
+        ),
       ),
     );
-
-    if (confirm == true) {
-      try {
-        // 1. Criar pedido
-        final order = Order(
-          id: '',
-          customerId: currentUser.id,
-          items: [
-            OrderItem(
-              productId: product.id,
-              name: product.name,
-              quantity: 1,
-              unitPrice: product.price,
-            ),
-          ],
-          status: OrderStatus.pending,
-        );
-
-        final orderRepo = OrderRepository();
-        await orderRepo.createOrder(order);
-
-        // 2. Atualizar estoque
-        final newQuantity = product.quantity - 1;
-        final dto = ProductDto(
-          id: product.id,
-          name: product.name,
-          description: product.description,
-          imageUrl: product.imageUrl,
-          price: product.price,
-          available: newQuantity > 0,
-          quantity: newQuantity,
-          categoryId: product.categoryId,
-        );
-        
-        final remote = SupabaseProductRemoteDataSource(client: Supabase.instance.client);
-        await remote.update(dto);
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Compra realizada com sucesso!')),
-          );
-          setState(() {
-            _productsFuture = _repository!.fetchProducts();
-          });
-        }
-      } catch (e) {
-        // print('Erro na compra: $e');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ao processar compra: $e')),
-          );
-        }
-      }
-    }
   }
 
   @override
@@ -240,6 +216,41 @@ class _HomeScreenState extends State<HomeScreen> {
                 _loadCategories(); // Reload categories as well
               }
             },
+          ),
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.shopping_bag_outlined),
+                onPressed: () {
+                  Navigator.of(context).pushNamed(AppRoutes.orders);
+                },
+              ),
+              if (_cartService.itemCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 18,
+                      minHeight: 18,
+                    ),
+                    child: Text(
+                      '${_cartService.itemCount}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),
@@ -374,14 +385,16 @@ class _HomeScreenState extends State<HomeScreen> {
                               return _CategoryCarousel(
                                 categoryName: category.name,
                                 products: categoryProducts,
-                                onProductTap: _handlePurchase,
+                                onProductTap: _handleProductTap,
+                                onPurchase: _handlePurchase,
                               );
                             }),
                             // Produtos sem categoria (lista vertical)
                             if (uncategorized.isNotEmpty)
                               _UncategorizedProductList(
                                 products: uncategorized,
-                                onProductTap: _handlePurchase,
+                                onProductTap: _handleProductTap,
+                                onPurchase: _handlePurchase,
                               ),
                           ],
                         );
@@ -399,10 +412,12 @@ class _UncategorizedProductList extends StatelessWidget {
   const _UncategorizedProductList({
     required this.products,
     required this.onProductTap,
+    required this.onPurchase,
   });
 
   final List<Product> products;
   final void Function(Product) onProductTap;
+  final void Function(Product) onPurchase;
 
   @override
   Widget build(BuildContext context) {
@@ -426,110 +441,114 @@ class _UncategorizedProductList extends StatelessWidget {
             child: Card(
               elevation: 2,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: p.imageUrl.isNotEmpty
-                          ? Image.network(
-                              p.imageUrl,
-                              width: 80,
-                              height: 80,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: () => onProductTap(p),
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: p.imageUrl.isNotEmpty
+                            ? Image.network(
+                                p.imageUrl,
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  width: 80,
+                                  height: 80,
+                                  color: Colors.grey[200],
+                                  child: const Icon(Icons.medication, color: Colors.grey),
+                                ),
+                              )
+                            : Container(
                                 width: 80,
                                 height: 80,
                                 color: Colors.grey[200],
                                 child: const Icon(Icons.medication, color: Colors.grey),
                               ),
-                            )
-                          : Container(
-                              width: 80,
-                              height: 80,
-                              color: Colors.grey[200],
-                              child: const Icon(Icons.medication, color: Colors.grey),
-                            ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            p.name,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            p.description,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Estoque: ${p.quantity} unidades',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: hasStock ? Colors.grey[700] : Colors.red,
-                              fontWeight: hasStock ? FontWeight.normal : FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'R\$ ${p.price.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.teal,
-                                ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              p.name,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
                               ),
-                              if (hasStock)
-                                ElevatedButton(
-                                  onPressed: () => onProductTap(p),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.teal,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                                    minimumSize: const Size(0, 36),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              p.description,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Estoque: ${p.quantity} unidades',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: hasStock ? Colors.grey[700] : Colors.red,
+                                fontWeight: hasStock ? FontWeight.normal : FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'R\$ ${p.price.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.teal,
                                   ),
-                                  child: const Text('Comprar'),
-                                )
-                              else
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red[50],
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(color: Colors.red[200]!),
-                                  ),
-                                  child: Text(
-                                    'Esgotado',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.red[700],
-                                      fontWeight: FontWeight.bold,
+                                ),
+                                if (hasStock)
+                                  ElevatedButton(
+                                    onPressed: () => onPurchase(p),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.teal,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                                      minimumSize: const Size(0, 36),
+                                    ),
+                                    child: const Text('Comprar'),
+                                  )
+                                else
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red[50],
+                                      borderRadius: BorderRadius.circular(4),
+                                      border: Border.all(color: Colors.red[200]!),
+                                    ),
+                                    child: Text(
+                                      'Esgotado',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.red[700],
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
-                                ),
-                            ],
-                          ),
-                        ],
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -545,11 +564,13 @@ class _CategoryCarousel extends StatelessWidget {
     required this.categoryName,
     required this.products,
     required this.onProductTap,
+    required this.onPurchase,
   });
 
   final String categoryName;
   final List<Product> products;
   final void Function(Product) onProductTap;
+  final void Function(Product) onPurchase;
 
   @override
   Widget build(BuildContext context) {
@@ -584,72 +605,56 @@ class _CategoryCarousel extends StatelessWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(12),
-                        ),
-                        child: product.imageUrl.isNotEmpty
-                            ? Image.network(
-                                product.imageUrl,
-                                height: 100,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
-                                  height: 100,
-                                  color: Colors.grey[200],
-                                  child: const Icon(
-                                    Icons.medication,
-                                    size: 48,
-                                    color: Colors.grey,
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: () => onProductTap(product),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: product.imageUrl.isNotEmpty
+                              ? Image.network(
+                                  product.imageUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(
+                                    color: Colors.grey[200],
+                                    child: const Icon(Icons.medication, color: Colors.grey),
                                   ),
+                                )
+                              : Container(
+                                  color: Colors.grey[200],
+                                  child: const Icon(Icons.medication, color: Colors.grey),
                                 ),
-                              )
-                            : Container(
-                                height: 100,
-                                color: Colors.grey[200],
-                                child: const Icon(
-                                  Icons.medication,
-                                  size: 48,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                      ),
-                      Expanded(
-                        child: Padding(
+                        ),
+                        Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 product.name,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                maxLines: 2,
+                                maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontWeight: FontWeight.bold),
                               ),
-                              const Spacer(),
+                              const SizedBox(height: 4),
                               Text(
                                 'R\$ ${product.price.toStringAsFixed(2)}',
                                 style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
                                   color: Colors.teal,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              const SizedBox(height: 6),
+                              const SizedBox(height: 8),
                               if (hasStock)
                                 SizedBox(
                                   width: double.infinity,
                                   child: ElevatedButton(
-                                    onPressed: () => onProductTap(product),
+                                    onPressed: () => onPurchase(product),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.teal,
                                       foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      padding: EdgeInsets.zero,
                                       minimumSize: const Size(0, 32),
                                       textStyle: const TextStyle(fontSize: 12),
                                     ),
@@ -659,10 +664,7 @@ class _CategoryCarousel extends StatelessWidget {
                               else
                                 Container(
                                   width: double.infinity,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 6,
-                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 6),
                                   decoration: BoxDecoration(
                                     color: Colors.red[50],
                                     borderRadius: BorderRadius.circular(4),
@@ -672,7 +674,7 @@ class _CategoryCarousel extends StatelessWidget {
                                     'Esgotado',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
-                                      fontSize: 11,
+                                      fontSize: 12,
                                       color: Colors.red[700],
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -681,15 +683,14 @@ class _CategoryCarousel extends StatelessWidget {
                             ],
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               );
             },
           ),
         ),
-        const SizedBox(height: 8),
       ],
     );
   }
