@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meu_app_inicial/dto/category_dto.dart';
-import 'package:meu_app_inicial/mappers/category_mapper.dart';
+import 'package:meu_app_inicial/data/models/category_dto.dart';
+import 'package:meu_app_inicial/data/mappers/category_mapper.dart';
 
 void main() {
   test('Category mapper generates slug if missing', () {

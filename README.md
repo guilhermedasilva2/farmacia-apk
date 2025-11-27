@@ -1,16 +1,86 @@
-# meu_app_inicial
+# PharmaConnect 💊
 
-A new Flutter project.
+Aplicativo móvel para gestão farmacêutica e lembretes de medicação, desenvolvido em Flutter seguindo os princípios da **Clean Architecture**.
 
-## Getting Started
+## 📋 Sobre o Projeto
 
-This project is a starting point for a Flutter application.
+O **PharmaConnect** é uma solução completa que atende tanto a clientes quanto a administradores de farmácias. O app permite que usuários comprem produtos, gerenciem seus pedidos e configurem lembretes para seus medicamentos. Para administradores, oferece um painel robusto para gestão de estoque, categorias e pedidos.
 
-A few resources to get you started if this is your first Flutter project:
+## 🚀 Funcionalidades
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+### 👤 Para Usuários
+- **Catálogo de Produtos:** Navegação por categorias e busca de medicamentos/produtos.
+- **Carrinho e Compras:** Fluxo completo de compra com baixa automática de estoque.
+- **Meus Pedidos:** Acompanhamento do status dos pedidos (Pendente, Pago, Enviado, Entregue).
+- **Lembretes de Medicação:**
+    - Agendamento de horários.
+    - Controle de doses tomadas.
+    - Alertas visuais.
+- **Perfil:** Gerenciamento de dados pessoais e avatar.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### 🛡️ Para Administradores
+- **Gestão de Estoque:**
+    - Listagem, Adição, Edição e Remoção de produtos.
+    - Controle de quantidade e disponibilidade.
+- **Gestão de Categorias:**
+    - Organização de produtos em categorias dinâmicas.
+- **Gestão de Pedidos:**
+    - Visualização de todos os pedidos.
+    - Atualização de status (ex: marcar como Enviado).
+    - Cancelamento/Exclusão de pedidos.
+
+## 🏗️ Arquitetura
+
+O projeto segue estritamente a **Clean Architecture**, garantindo desacoplamento e testabilidade:
+
+```
+lib/
+├── core/           # Utilitários, constantes e configurações globais
+├── domain/         # Camada mais interna (Regras de Negócio)
+│   ├── entities/   # Objetos de negócio puros
+│   └── repositories/# Interfaces (contratos) dos repositórios
+├── data/           # Camada de Dados
+│   ├── models/     # DTOs (Data Transfer Objects) e Mappers
+│   ├── datasources/# Fontes de dados (Supabase, SharedPreferences)
+│   └── repositories/# Implementação concreta dos repositórios
+└── presentation/   # Camada de Interface (UI)
+    ├── screens/    # Telas do aplicativo
+    └── widgets/    # Componentes reutilizáveis
+```
+
+## 🛠️ Tecnologias Utilizadas
+
+- **Flutter:** Framework UI.
+- **Supabase:** Backend as a Service (Auth, Database, Realtime).
+- **PostgreSQL:** Banco de dados (via Supabase).
+- **Clean Architecture:** Padrão arquitetural.
+- **Provider/ChangeNotifier:** Gerenciamento de estado simples e eficiente.
+- **SharedPreferences:** Persistência local leve.
+
+## ⚙️ Configuração e Instalação
+
+### Pré-requisitos
+- Flutter SDK instalado.
+- Conta no Supabase.
+
+### Configuração do Banco de Dados
+O esquema do banco de dados está disponível em `docs/database_schema.sql`.
+1. Crie um novo projeto no Supabase.
+2. Vá até o **SQL Editor**.
+3. Copie e execute o conteúdo de `docs/database_schema.sql`.
+
+### Executando o App
+1. Clone o repositório.
+2. Crie um arquivo `.env` ou configure as chaves do Supabase em `lib/main.dart` (ou onde estiver a inicialização).
+3. Execute:
+   ```bash
+   flutter pub get
+   flutter run
+   ```
+
+## 📚 Documentação Adicional
+- **Esquema do Banco:** `docs/database_schema.sql`
+- **Apresentação:** `docs/apresentacao.md`
+
+---
+Desenvolvido como parte do projeto final de Desenvolvimento Mobile.

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meu_app_inicial/dto/medication_reminder_dto.dart';
-import 'package:meu_app_inicial/mappers/medication_reminder_mapper.dart';
+import 'package:meu_app_inicial/data/models/medication_reminder_dto.dart';
+import 'package:meu_app_inicial/data/mappers/medication_reminder_mapper.dart';
 
 void main() {
   test('MedicationReminder mapper converts between entity and dto', () {

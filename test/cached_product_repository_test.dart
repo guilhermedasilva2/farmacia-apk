@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meu_app_inicial/dto/product_dto.dart';
-import 'package:meu_app_inicial/models/product.dart';
-import 'package:meu_app_inicial/repositories/product_repository.dart';
+import 'package:meu_app_inicial/data/models/product_dto.dart';
+import 'package:meu_app_inicial/domain/entities/product.dart';
+import 'package:meu_app_inicial/data/repositories/product_repository.dart';
 
 class FakeRemote implements ProductRemoteDataSource {
   FakeRemote(this._dtos, {this.shouldThrow = false});
@@ -10,10 +10,19 @@ class FakeRemote implements ProductRemoteDataSource {
   final bool shouldThrow;
 
   @override
-  Future<List<ProductDto>> fetchAll() async {
+  Future<List<ProductDto>> fetchAll({String? categoryId}) async {
     if (shouldThrow) throw Exception('remote error');
     return _dtos;
   }
+
+  @override
+  Future<void> create(ProductDto product) async {}
+
+  @override
+  Future<void> update(ProductDto product) async {}
+
+  @override
+  Future<void> delete(String id) async {}
 }
 
 class FakeLocal implements ProductLocalDataSource {
@@ -36,7 +45,7 @@ class FakeLocal implements ProductLocalDataSource {
 
 class FakeFallback implements ProductRepository {
   @override
-  Future<List<Product>> fetchProducts() async {
+  Future<List<Product>> fetchProducts({String? categoryId}) async {
     return const [
       Product(
         id: 'fallback',
@@ -48,6 +57,15 @@ class FakeFallback implements ProductRepository {
       )
     ];
   }
+
+  @override
+  Future<void> createProduct(ProductDto product) async {}
+
+  @override
+  Future<void> updateProduct(ProductDto product) async {}
+
+  @override
+  Future<void> deleteProduct(String id) async {}
 }
 
 void main() {

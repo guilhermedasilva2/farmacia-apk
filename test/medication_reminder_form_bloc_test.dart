@@ -1,8 +1,8 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meu_app_inicial/bloc/medication_reminder_form_bloc.dart';
-import 'package:meu_app_inicial/models/medication_reminder.dart';
-import 'package:meu_app_inicial/repositories/medication_reminder_repository.dart';
+import 'package:meu_app_inicial/presentation/bloc/medication_reminder_form_bloc.dart';
+import 'package:meu_app_inicial/domain/entities/medication_reminder.dart';
+import 'package:meu_app_inicial/domain/repositories/medication_reminder_repository.dart';
 
 class FakeMedicationRepository implements MedicationReminderRepository {
   MedicationReminder? saved;

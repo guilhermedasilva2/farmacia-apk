@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:meu_app_inicial/screens/home_screen.dart'; 
-import 'package:meu_app_inicial/screens/onboarding_screen.dart'; 
-import 'package:meu_app_inicial/screens/splash_screen.dart';
-import 'package:meu_app_inicial/screens/policy_viewer_screen.dart';
-import 'package:meu_app_inicial/screens/consent_screen.dart';
-import 'package:meu_app_inicial/screens/products_screen.dart';
-import 'package:meu_app_inicial/screens/medication_reminder_list_page.dart';
-import 'package:meu_app_inicial/utils/app_routes.dart';
+import 'package:meu_app_inicial/presentation/screens/home_screen.dart'; 
+import 'package:meu_app_inicial/presentation/screens/onboarding_screen.dart'; 
+import 'package:meu_app_inicial/presentation/screens/splash_screen.dart';
+import 'package:meu_app_inicial/presentation/screens/policy_viewer_screen.dart';
+import 'package:meu_app_inicial/presentation/screens/consent_screen.dart';
+import 'package:meu_app_inicial/presentation/screens/products_screen.dart';
+import 'package:meu_app_inicial/presentation/screens/medication_reminder_list_page.dart';
+import 'package:meu_app_inicial/presentation/screens/auth_screen.dart';
+import 'package:meu_app_inicial/presentation/screens/admin_products_screen.dart';
+import 'package:meu_app_inicial/presentation/screens/admin_orders_screen.dart';
+import 'package:meu_app_inicial/presentation/screens/admin_categories_screen.dart';
+import 'package:meu_app_inicial/core/utils/app_routes.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -43,6 +47,10 @@ class MyApp extends StatelessWidget {
         AppRoutes.policy: (ctx) => const PolicyViewerScreen(),
         AppRoutes.consent: (ctx) => const ConsentScreen(),
         AppRoutes.reminders: (ctx) => const MedicationReminderListPage(),
+        AppRoutes.auth: (ctx) => const AuthScreen(),
+        AppRoutes.adminProducts: (ctx) => const AdminProductsScreen(),
+        AppRoutes.adminOrders: (ctx) => const AdminOrdersScreen(),
+        AppRoutes.adminCategories: (ctx) => const AdminCategoriesScreen(),
       },
     );
   }

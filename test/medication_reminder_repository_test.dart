@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meu_app_inicial/models/medication_reminder.dart';
-import 'package:meu_app_inicial/repositories/medication_reminder_repository.dart';
+import 'package:meu_app_inicial/domain/entities/medication_reminder.dart';
+import 'package:meu_app_inicial/data/repositories/medication_reminder_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -19,14 +19,15 @@ void main() {
         dosage: '1 comprimido',
         notes: 'Após refeições',
         scheduledAt: DateTime(2025, 1, 1, 8, 0),
-        isTaken: false,
+        takenDoses: 0,
+        totalDoses: 1,
       ),
     );
 
     expect(reminder.id.isNotEmpty, true);
 
     await repository.upsertReminder(
-      reminder.copyWith(notes: 'Após café da manhã', isTaken: true),
+      reminder.copyWith(notes: 'Após café da manhã', takenDoses: 1, totalDoses: 1),
     );
 
     final all = await repository.listReminders();

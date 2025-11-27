@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meu_app_inicial/dto/address_dto.dart';
-import 'package:meu_app_inicial/mappers/address_mapper.dart';
+import 'package:meu_app_inicial/data/models/address_dto.dart';
+import 'package:meu_app_inicial/data/mappers/address_mapper.dart';
 
 void main() {
   test('Address mapper toEntity/toDto roundtrip', () {
