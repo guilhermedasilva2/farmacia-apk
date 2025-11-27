@@ -44,6 +44,10 @@ class ProductDto {
       'category_id': categoryId,
     };
   }
+
+  factory ProductDto.fromJson(Map<String, dynamic> json) => ProductDto.fromMap(json);
+
+  Map<String, dynamic> toJson() => toMap();
 }
 
 
