@@ -48,6 +48,8 @@ class CategoryRepository {
     }).eq('id', id);
   }
 
+
+
   /// Deleta uma categoria e move seus produtos para "Outros Produtos"
   Future<void> deleteCategory(String id) async {
     try {
