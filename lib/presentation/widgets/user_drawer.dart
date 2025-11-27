@@ -9,6 +9,7 @@ import 'package:meu_app_inicial/domain/entities/user_profile.dart';
 import 'package:meu_app_inicial/domain/entities/user_role.dart';
 import 'package:meu_app_inicial/presentation/widgets/role_badge.dart';
 import 'package:meu_app_inicial/core/utils/app_routes.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class UserDrawer extends StatefulWidget {
   const UserDrawer({super.key});
@@ -28,6 +29,15 @@ class _UserDrawerState extends State<UserDrawer> {
   void initState() {
     super.initState();
     _init();
+    _setupAuthListener();
+  }
+
+  void _setupAuthListener() {
+    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      if (mounted) {
+        _init(); // Reload profile on auth change
+      }
+    });
   }
 
   Future<void> _init() async {
@@ -278,12 +288,10 @@ class _UserDrawerState extends State<UserDrawer> {
               ListTile(
                 leading: const Icon(Icons.shopping_bag_outlined),
                 title: const Text('Meus Pedidos'),
-                subtitle: const Text('Veja seu histórico de compras'),
+                subtitle: const Text('Veja seus produtos para comprar'),
                 onTap: () {
                   Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Tela de pedidos em desenvolvimento')),
-                  );
+                  Navigator.of(context).pushNamed(AppRoutes.orders);
                 },
               ),
             ],
