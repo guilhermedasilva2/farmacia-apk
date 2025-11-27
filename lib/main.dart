@@ -10,6 +10,8 @@ import 'package:meu_app_inicial/presentation/screens/auth_screen.dart';
 import 'package:meu_app_inicial/presentation/screens/admin_products_screen.dart';
 import 'package:meu_app_inicial/presentation/screens/admin_orders_screen.dart';
 import 'package:meu_app_inicial/presentation/screens/admin_categories_screen.dart';
+import 'package:meu_app_inicial/presentation/screens/cart_screen.dart';
+import 'package:meu_app_inicial/presentation/screens/product_details_screen.dart';
 import 'package:meu_app_inicial/core/utils/app_routes.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -44,6 +46,7 @@ class MyApp extends StatelessWidget {
         AppRoutes.onboarding: (ctx) => const OnboardingScreen(),
         AppRoutes.home: (ctx) => const HomeScreen(),
         AppRoutes.products: (ctx) => const ProductsScreen(),
+        AppRoutes.orders: (ctx) => const CartScreen(),
         AppRoutes.policy: (ctx) => const PolicyViewerScreen(),
         AppRoutes.consent: (ctx) => const ConsentScreen(),
         AppRoutes.reminders: (ctx) => const MedicationReminderListPage(),
@@ -51,6 +54,7 @@ class MyApp extends StatelessWidget {
         AppRoutes.adminProducts: (ctx) => const AdminProductsScreen(),
         AppRoutes.adminOrders: (ctx) => const AdminOrdersScreen(),
         AppRoutes.adminCategories: (ctx) => const AdminCategoriesScreen(),
+        AppRoutes.productDetails: (ctx) => const ProductDetailsScreen(),
       },
     );
   }
