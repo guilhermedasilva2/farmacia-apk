@@ -47,3 +47,37 @@ app.*.map.json
 # Project docs not to commit
 082-Modelo-DTO-e-Mapeamento.pdf
 pdf/
+
+# ========================================
+# SECURITY: Environment & Sensitive Files
+# ========================================
+# Environment variables with API keys and secrets
+.env
+.env.*
+!.env.example
+
+# Firebase & Google Services
+google-services.json
+GoogleService-Info.plist
+
+# Android signing keys
+*.jks
+*.keystore
+key.properties
+/android/key.properties
+
+# iOS signing
+*.p12
+*.mobileprovision
+
+# API keys and secrets
+**/secrets/
+**/credentials/
+api_keys.dart
+secrets.dart
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+*.realm
