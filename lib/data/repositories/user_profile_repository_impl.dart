@@ -1,11 +1,15 @@
 import 'package:meu_app_inicial/domain/entities/user_profile.dart';
+import 'package:meu_app_inicial/domain/repositories/user_profile_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Repositório para gerenciar dados de usuários
-class UserRepository {
-  final SupabaseClient _client = Supabase.instance.client;
+class UserProfileRepositoryImpl implements UserProfileRepository {
+  UserProfileRepositoryImpl({SupabaseClient? client})
+      : _client = client ?? Supabase.instance.client;
 
-  /// Busca o perfil de um usuário por ID
+  final SupabaseClient _client;
+
+  @override
   Future<UserProfile?> getUserProfile(String userId) async {
     try {
       final response = await _client
@@ -20,7 +24,7 @@ class UserRepository {
     }
   }
 
-  /// Atualiza o perfil de um usuário
+  @override
   Future<void> updateUserProfile(UserProfile profile) async {
     await _client
         .from('profiles')
@@ -52,5 +56,19 @@ class UserRepository {
   /// Deleta o perfil de um usuário
   Future<void> deleteUserProfile(String userId) async {
     await _client.from('profiles').delete().eq('id', userId);
+  }
+  
+  @override
+  Future<void> updateAvatar(String userId, String avatarPath) async {
+    await _client.from('profiles').update({
+      'avatar_url': avatarPath,
+    }).eq('id', userId);
+  }
+  
+  @override
+  Future<void> updateUserRole(String userId, String role) async {
+    await _client.from('profiles').update({
+      'role': role,
+    }).eq('id', userId);
   }
 }

@@ -6,46 +6,9 @@ import 'package:meu_app_inicial/data/models/page_cursor.dart';
 import 'package:meu_app_inicial/data/models/remote_page.dart';
 import 'package:meu_app_inicial/data/mappers/product_mapper.dart';
 import 'package:meu_app_inicial/domain/entities/product.dart';
+import 'package:meu_app_inicial/domain/repositories/product_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-/// Interface de repositório para a entidade Product.
-///
-/// O repositório define as operações de acesso e sincronização de dados,
-/// separando a lógica de persistência da lógica de negócio.
-/// Utilizar interfaces facilita a troca de implementações (ex.: local, remota)
-/// e torna o código mais testável e modular.
-///
-/// ⚠️ Dicas práticas para evitar erros comuns:
-/// - Certifique-se de que a entidade Product possui métodos de conversão robustos
-///   (ex: aceitar id como int ou string, datas como DateTime ou String).
-/// - Ao implementar esta interface, adicione prints/logs (usando kDebugMode) nos
-///   métodos principais para facilitar o diagnóstico de problemas de cache, conversão e sync.
-/// - Em métodos assíncronos usados na UI, sempre verifique se o widget está "mounted"
-///   antes de chamar setState, evitando exceções de widget desmontado.
-abstract class ProductRepository {
-  /// Busca produtos (comportamento híbrido: tenta remoto, fallback para cache).
-  /// Para novo código, prefira usar loadFromCache() + syncFromServer().
-  Future<List<Product>> fetchProducts({String? categoryId});
-  
-  /// Carrega produtos do cache local para render inicial rápido.
-  /// Use este método para exibir dados imediatamente na UI.
-  Future<List<Product>> loadFromCache();
-  
-  /// Sincronização incremental com o servidor (>= lastSync).
-  /// Retorna quantos registros foram atualizados no cache.
-  /// Chame este método em pull-to-refresh ou na inicialização do app.
-  Future<int> syncFromServer();
-  
-  /// Cria um novo produto no servidor.
-  Future<void> createProduct(ProductDto product);
-  
-  /// Atualiza um produto existente no servidor.
-  Future<void> updateProduct(ProductDto product);
-  
-  /// Remove um produto do servidor.
-  Future<void> deleteProduct(String id);
-}
 
 /// Interface para acesso remoto aos dados de produtos (ex: Supabase).
 ///
@@ -212,15 +175,15 @@ class CachedProductRepository implements ProductRepository {
   }
 
   @override
-  Future<void> createProduct(ProductDto product) async {
-    await _remote.create(product);
+  Future<void> createProduct(Product product) async {
+    await _remote.create(ProductMapper.toDto(product));
     // Invalidate or update cache if needed, for now just refetch next time
     // Or we could append to local cache optimistically
   }
 
   @override
-  Future<void> updateProduct(ProductDto product) async {
-    await _remote.update(product);
+  Future<void> updateProduct(Product product) async {
+    await _remote.update(ProductMapper.toDto(product));
   }
 
   @override
@@ -230,8 +193,8 @@ class CachedProductRepository implements ProductRepository {
 }
 
 class SupabaseProductRemoteDataSource implements ProductRemoteDataSource {
-  SupabaseProductRemoteDataSource({required SupabaseClient? client, this.tableName = 'products'})
-      : _client = client;
+  SupabaseProductRemoteDataSource({SupabaseClient? client, this.tableName = 'products'})
+      : _client = client ?? Supabase.instance.client;
 
   final SupabaseClient? _client;
   final String tableName;
@@ -494,10 +457,10 @@ class MockProductRepository implements ProductRepository {
   }
 
   @override
-  Future<void> createProduct(ProductDto product) async {}
+  Future<void> createProduct(Product product) async {}
 
   @override
-  Future<void> updateProduct(ProductDto product) async {}
+  Future<void> updateProduct(Product product) async {}
 
   @override
   Future<void> deleteProduct(String id) async {}
