@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meu_app_inicial/data/models/product_dto.dart';
-import 'package:meu_app_inicial/data/repositories/product_repository.dart';
+import 'package:meu_app_inicial/data/repositories/product_repository_impl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {

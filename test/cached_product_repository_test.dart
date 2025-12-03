@@ -3,7 +3,8 @@ import 'package:meu_app_inicial/data/models/product_dto.dart';
 import 'package:meu_app_inicial/data/models/remote_page.dart';
 import 'package:meu_app_inicial/data/models/page_cursor.dart';
 import 'package:meu_app_inicial/domain/entities/product.dart';
-import 'package:meu_app_inicial/data/repositories/product_repository.dart';
+import 'package:meu_app_inicial/data/repositories/product_repository_impl.dart';
+import 'package:meu_app_inicial/domain/repositories/product_repository.dart';
 
 class FakeRemote implements ProductRemoteDataSource {
   FakeRemote(this._dtos, {this.shouldThrow = false});
@@ -91,10 +92,10 @@ class FakeFallback implements ProductRepository {
   }
 
   @override
-  Future<void> createProduct(ProductDto product) async {}
+  Future<void> createProduct(Product product) async {}
 
   @override
-  Future<void> updateProduct(ProductDto product) async {}
+  Future<void> updateProduct(Product product) async {}
 
   @override
   Future<void> deleteProduct(String id) async {}
