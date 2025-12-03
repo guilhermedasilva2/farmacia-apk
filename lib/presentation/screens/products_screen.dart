@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:meu_app_inicial/data/models/product_dto.dart';
+import 'package:meu_app_inicial/data/models/remote_page.dart';
+import 'package:meu_app_inicial/data/models/page_cursor.dart';
 import 'package:meu_app_inicial/domain/entities/product.dart';
 import 'package:meu_app_inicial/domain/entities/user_role.dart';
 import 'package:meu_app_inicial/data/repositories/product_repository.dart';
@@ -196,9 +198,14 @@ class _ProductsScreenState extends State<ProductsScreen> {
   Future<void> _handleRefresh() async {
     if (_repository == null) return;
     try {
+      // Tenta sincronizar incrementalmente
+      await _repository!.syncFromServer();
+      
+      // Atualiza a lista lendo do cache atualizado
       setState(() {
-        _future = _repository!.fetchProducts();
+        _future = _repository!.loadFromCache();
       });
+      
       await _future;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -449,6 +456,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   
                   if (products.isEmpty) {
                     return ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
                       children: [
                         const SizedBox(height: 100),
                         Center(
@@ -699,7 +707,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
 class _FallbackRemote implements ProductRemoteDataSource {
   @override
-  Future<List<ProductDto>> fetchAll({String? categoryId}) async => [];
+  Future<List<ProductDto>> fetchAll({String? categoryId, DateTime? since}) async => [];
 
   @override
   Future<void> create(ProductDto product) async {}
@@ -709,5 +717,11 @@ class _FallbackRemote implements ProductRemoteDataSource {
 
   @override
   Future<void> delete(String id) async {}
+  
+  @override
+  Future<int> upsertProducts(List<ProductDto> dtos) async => 0;
+  
+  @override
+  Future<RemotePage<ProductDto>> fetchPage({PageCursor? cursor, int limit = 100, String? categoryId, DateTime? since}) async => RemotePage.empty();
 }
 

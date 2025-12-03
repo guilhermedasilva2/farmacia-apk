@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:meu_app_inicial/data/models/product_dto.dart';
+import 'package:meu_app_inicial/data/models/remote_page.dart';
+import 'package:meu_app_inicial/data/models/page_cursor.dart';
 import 'package:meu_app_inicial/domain/entities/product.dart';
 import 'package:meu_app_inicial/data/repositories/product_repository.dart';
 import 'package:meu_app_inicial/presentation/widgets/admin_product_form_dialog.dart';
@@ -395,11 +397,15 @@ class _ProductGridItem extends StatelessWidget {
 
 class _FallbackRemote implements ProductRemoteDataSource {
   @override
-  Future<List<ProductDto>> fetchAll({String? categoryId}) async => [];
+  Future<List<ProductDto>> fetchAll({String? categoryId, DateTime? since}) async => [];
   @override
   Future<void> create(ProductDto product) async {}
   @override
   Future<void> update(ProductDto product) async {}
   @override
   Future<void> delete(String id) async {}
+  @override
+  Future<int> upsertProducts(List<ProductDto> dtos) async => 0;
+  @override
+  Future<RemotePage<ProductDto>> fetchPage({PageCursor? cursor, int limit = 100, String? categoryId, DateTime? since}) async => RemotePage.empty();
 }

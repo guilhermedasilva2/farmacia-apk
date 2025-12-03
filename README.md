@@ -57,6 +57,42 @@ lib/
 - **Provider/ChangeNotifier:** Gerenciamento de estado simples e eficiente.
 - **SharedPreferences:** Persistência local leve.
 
+## 🔄 Sincronização e Offline
+
+O aplicativo implementa um sistema robusto de sincronização de dados:
+
+### Sincronização Bidirecional (Push + Pull)
+- **Push Sync:** Envia mudanças locais para o servidor (cache → Supabase)
+- **Pull Sync:** Busca atualizações remotas desde a última sincronização
+- **Resolução de Conflitos:** Last-Write-Wins baseado em `updated_at`
+- **Best-Effort:** Falhas de push não bloqueiam o pull
+
+### Sincronização Incremental
+- Baixa apenas dados modificados desde `lastSync`
+- Economiza banda e bateria
+- Timestamp armazenado em `SharedPreferences`
+
+### Paginação
+- Suporte a paginação com `PageCursor` (offset ou token)
+- `RemotePage<T>` genérico para respostas paginadas
+- Limite configurável (padrão: 100 itens/página)
+- Cálculo automático de próxima página
+
+### Cache Local
+- Todos os produtos cacheados localmente
+- Navegação offline completa
+- Sincronização automática em pull-to-refresh
+
+### Logging
+- Logs detalhados em modo debug (`kDebugMode`)
+- Monitoramento de push/pull/paginação
+- Exemplos:
+  ```
+  CachedProductRepository: Pushing 10 items to remote...
+  CachedProductRepository: Pulled 3 items from server.
+  ```
+
+
 ## ⚙️ Configuração e Instalação
 
 ### Pré-requisitos

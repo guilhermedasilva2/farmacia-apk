@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:meu_app_inicial/core/services/policy_service.dart';
@@ -79,6 +80,7 @@ class _PolicyViewerScreenState extends State<PolicyViewerScreen> {
 
   @override
   void dispose() {
+    _scrollTimer?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
@@ -89,63 +91,133 @@ class _PolicyViewerScreenState extends State<PolicyViewerScreen> {
       appBar: AppBar(
         title: Text(_document == PolicyDocument.privacy ? 'Políticas de Privacidade (LGPD)' : 'Termos de Uso'),
       ),
-      body: Column(
+      body: Stack(
         children: [
-          LinearProgressIndicator(
-            value: (_readProgress).clamp(0, 1),
-            minHeight: 4,
-          ),
-          Expanded(
-            child: FutureBuilder<String>(
-              future: _mdFuture,
-              builder: (context, snapshot) {
-                if (_mdFuture == null || !snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                // Após renderizar o conteúdo, verifica se cabe na tela e marca como lido automaticamente
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (_scrollController.hasClients) {
-                    final pos = _scrollController.position;
-                    if (pos.hasContentDimensions && pos.maxScrollExtent <= 0 && !_reachedEnd) {
-                      setState(() {
-                        _readProgress = 1.0;
-                        _reachedEnd = true;
-                      });
+          Column(
+            children: [
+              LinearProgressIndicator(
+                value: (_readProgress).clamp(0, 1),
+                minHeight: 4,
+              ),
+              Expanded(
+                child: FutureBuilder<String>(
+                  future: _mdFuture,
+                  builder: (context, snapshot) {
+                    if (_mdFuture == null || !snapshot.hasData) {
+                      return const Center(child: CircularProgressIndicator());
                     }
-                  }
-                });
-                return Scrollbar(
-                  controller: _scrollController,
-                  child: Markdown(
-                    controller: _scrollController,
-                    selectable: false,
-                    data: snapshot.data!,
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)),
+                    // Após renderizar o conteúdo, verifica se cabe na tela e marca como lido automaticamente
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (_scrollController.hasClients) {
+                        final pos = _scrollController.position;
+                        if (pos.hasContentDimensions && pos.maxScrollExtent <= 0 && !_reachedEnd) {
+                          setState(() {
+                            _readProgress = 1.0;
+                            _reachedEnd = true;
+                          });
+                        }
+                      }
+                    });
+                    return Scrollbar(
+                      controller: _scrollController,
+                      child: Markdown(
+                        controller: _scrollController,
+                        selectable: false,
+                        data: snapshot.data!,
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Semantics(
+                  button: true,
+                  label: 'Marcar políticas como lidas e continuar',
+                  child: ElevatedButton.icon(
+                    onPressed: (_reachedEnd && !_marking) ? _markAsReadAndContinue : null,
+                    icon: const Icon(Icons.check),
+                    label: Text(_marking ? 'Salvando...' : 'Marcar como lido e continuar'),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 52),
+                    ),
                   ),
-                );
-              },
-            ),
+                ),
+              ),
+            ],
           ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Semantics(
-              button: true,
-              label: 'Marcar políticas como lidas e continuar',
-              child: ElevatedButton.icon(
-                onPressed: (_reachedEnd && !_marking) ? _markAsReadAndContinue : null,
-                icon: const Icon(Icons.check),
-                label: Text(_marking ? 'Salvando...' : 'Marcar como lido e continuar'),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 52),
+          // Botão "Ir para o topo" - canto superior direito
+          if (_readProgress > 0.05) // Mostra apenas se não estiver no topo
+            Positioned(
+              top: 16,
+              right: 16,
+              child: FloatingActionButton.small(
+                heroTag: 'scroll_up',
+                onPressed: () {
+                  _scrollController.animateTo(
+                    0,
+                    duration: const Duration(milliseconds: 500),
+                    curve: Curves.easeOut,
+                  );
+                },
+                tooltip: 'Ir para o topo',
+                child: const Icon(Icons.arrow_upward),
+              ),
+            ),
+          // Botão "Rolar para baixo" - canto inferior direito
+          if (_readProgress < 0.95) // Mostra apenas se não estiver no final
+            Positioned(
+              bottom: 90, // Acima do botão "Marcar como lido"
+              right: 16,
+              child: GestureDetector(
+                onLongPressStart: (_) => _startScrollingDown(),
+                onLongPressEnd: (_) => _stopScrollingDown(),
+                child: FloatingActionButton.small(
+                  heroTag: 'scroll_down',
+                  onPressed: () {
+                    // Tap único: rola um pouco
+                    final currentPos = _scrollController.position.pixels;
+                    final maxScroll = _scrollController.position.maxScrollExtent;
+                    final targetPos = (currentPos + 200).clamp(0.0, maxScroll);
+                    _scrollController.animateTo(
+                      targetPos,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOut,
+                    );
+                  },
+                  tooltip: 'Segurar para rolar para baixo',
+                  child: const Icon(Icons.arrow_downward),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
   }
-}
 
+  Timer? _scrollTimer;
+
+  void _startScrollingDown() {
+    _scrollTimer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+      if (!_scrollController.hasClients) {
+        timer.cancel();
+        return;
+      }
+      final currentPos = _scrollController.position.pixels;
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      if (currentPos >= maxScroll) {
+        timer.cancel();
+        return;
+      }
+      _scrollController.jumpTo((currentPos + 10).clamp(0.0, maxScroll));
+    });
+  }
+
+  void _stopScrollingDown() {
+    _scrollTimer?.cancel();
+    _scrollTimer = null;
+  }
+}
 

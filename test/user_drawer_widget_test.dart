@@ -15,11 +15,11 @@ void main() {
 
   testWidgets('Drawer shows initials by default', (tester) async {
     await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
+    await tester.pumpAndSettle(); // Wait for initial build
 
     // Open the drawer
-    ScaffoldMessenger.of(tester.element(find.byType(Scaffold)));
     await tester.tap(find.byTooltip('Open navigation menu'));
-    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle(); // Wait for drawer animation to complete
 
     expect(find.textContaining('U'), findsWidgets); // Fallback initials from 'Usuário'
   });
@@ -35,8 +35,10 @@ void main() {
     await prefs.setString('user_avatar_path_v1', file.path);
 
     await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
+    await tester.pumpAndSettle(); // Wait for initial build
+    
     await tester.tap(find.byTooltip('Open navigation menu'));
-    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle(); // Wait for drawer animation
 
     // The CircleAvatar with backgroundImage doesn't expose a direct matcher; we at least ensure no initials text now
     expect(find.text('U'), findsNothing);

@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meu_app_inicial/data/models/product_dto.dart';
+import 'package:meu_app_inicial/data/models/remote_page.dart';
+import 'package:meu_app_inicial/data/models/page_cursor.dart';
 import 'package:meu_app_inicial/domain/entities/product.dart';
 import 'package:meu_app_inicial/data/repositories/product_repository.dart';
 
@@ -10,7 +12,7 @@ class FakeRemote implements ProductRemoteDataSource {
   final bool shouldThrow;
 
   @override
-  Future<List<ProductDto>> fetchAll({String? categoryId}) async {
+  Future<List<ProductDto>> fetchAll({String? categoryId, DateTime? since}) async {
     if (shouldThrow) throw Exception('remote error');
     return _dtos;
   }
@@ -23,6 +25,20 @@ class FakeRemote implements ProductRemoteDataSource {
 
   @override
   Future<void> delete(String id) async {}
+  
+  @override
+  Future<int> upsertProducts(List<ProductDto> dtos) async => dtos.length;
+  
+  @override
+  Future<RemotePage<ProductDto>> fetchPage({
+    PageCursor? cursor,
+    int limit = 100,
+    String? categoryId,
+    DateTime? since,
+  }) async {
+    if (shouldThrow) throw Exception('remote error');
+    return RemotePage(items: _dtos);
+  }
 }
 
 class FakeLocal implements ProductLocalDataSource {
@@ -41,9 +57,25 @@ class FakeLocal implements ProductLocalDataSource {
       _storage[dto.id] = dto;
     }
   }
+
+  DateTime? _lastSync;
+
+  @override
+  Future<DateTime?> getLastSync() async => _lastSync;
+
+  @override
+  Future<void> setLastSync(DateTime time) async {
+    _lastSync = time;
+  }
 }
 
 class FakeFallback implements ProductRepository {
+  @override
+  Future<List<Product>> loadFromCache() async => [];
+
+  @override
+  Future<int> syncFromServer() async => 0;
+
   @override
   Future<List<Product>> fetchProducts({String? categoryId}) async {
     return const [

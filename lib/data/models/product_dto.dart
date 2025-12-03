@@ -7,6 +7,7 @@ class ProductDto {
   final bool? available;
   final int? quantity;
   final String? categoryId;
+  final DateTime? updatedAt;
 
   const ProductDto({
     required this.id,
@@ -17,6 +18,7 @@ class ProductDto {
     this.available,
     this.quantity,
     this.categoryId,
+    this.updatedAt,
   });
 
   factory ProductDto.fromMap(Map<String, dynamic> map) {
@@ -29,11 +31,12 @@ class ProductDto {
       available: map['available'] ?? map['disponivel'],
       quantity: map['quantity'] ?? map['quantidade'],
       categoryId: (map['category_id'] ?? map['categoria_id']) as String?,
+      updatedAt: map['updated_at'] != null ? DateTime.tryParse(map['updated_at'].toString()) : null,
     );
   }
 
   Map<String, dynamic> toMap() {
-    return {
+    final map = {
       'id': id,
       'name': name,
       'description': description,
@@ -43,6 +46,10 @@ class ProductDto {
       'quantity': quantity,
       'category_id': categoryId,
     };
+    if (updatedAt != null) {
+      map['updated_at'] = updatedAt!.toIso8601String();
+    }
+    return map;
   }
 
   factory ProductDto.fromJson(Map<String, dynamic> json) => ProductDto.fromMap(json);
