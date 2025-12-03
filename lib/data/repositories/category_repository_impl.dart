@@ -1,12 +1,17 @@
 import 'package:flutter/foundation.dart' hide Category;
 import 'package:meu_app_inicial/domain/entities/category.dart';
+import 'package:meu_app_inicial/domain/repositories/category_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Repositório para gerenciar categorias
-class CategoryRepository {
-  final SupabaseClient _client = Supabase.instance.client;
+class CategoryRepositoryImpl implements CategoryRepository {
+  CategoryRepositoryImpl({SupabaseClient? client})
+      : _client = client ?? Supabase.instance.client;
+
+  final SupabaseClient _client;
 
   /// Busca todas as categorias
+  @override
   Future<List<Category>> getAllCategories() async {
     try {
       final response = await _client
@@ -30,7 +35,7 @@ class CategoryRepository {
     }
   }
 
-  /// Cria uma nova categoria
+  @override
   Future<String> createCategory(String name, String slug) async {
     final response = await _client.from('categories').insert({
       'name': name,
@@ -41,6 +46,7 @@ class CategoryRepository {
   }
 
   /// Atualiza uma categoria
+  @override
   Future<void> updateCategory(String id, String name, String slug) async {
     await _client.from('categories').update({
       'name': name,
@@ -48,9 +54,8 @@ class CategoryRepository {
     }).eq('id', id);
   }
 
-
-
   /// Deleta uma categoria e move seus produtos para "Outros Produtos"
+  @override
   Future<void> deleteCategory(String id) async {
     try {
       // Primeiro, atualiza todos os produtos desta categoria para null (Outros Produtos)

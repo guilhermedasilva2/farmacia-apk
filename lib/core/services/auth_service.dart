@@ -3,11 +3,18 @@ import 'package:meu_app_inicial/domain/entities/user_profile.dart';
 import 'package:meu_app_inicial/domain/entities/user_role.dart';
 
 class AuthService {
-  final SupabaseClient _client = Supabase.instance.client;
+  AuthService({SupabaseClient? client}) : _client = client ?? Supabase.instance.client;
+
+  final SupabaseClient _client;
 
   Stream<User?> get authStateChanges => _client.auth.onAuthStateChange.map((event) => event.session?.user);
 
   User? get currentUser => _client.auth.currentUser;
+
+  bool get isSessionValid {
+    final session = _client.auth.currentSession;
+    return session != null && !session.isExpired;
+  }
 
   /// Obtém o perfil completo do usuário atual
   Future<UserProfile?> getUserProfile() async {
@@ -38,10 +45,16 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    await _client.auth.signInWithPassword(
-      email: email,
-      password: password,
-    );
+    try {
+      await _client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+    } on AuthException catch (e) {
+      throw Exception(e.message);
+    } catch (e) {
+      throw Exception('Erro ao fazer login: $e');
+    }
   }
 
   Future<void> signUpWithEmailAndPassword({
@@ -49,13 +62,19 @@ class AuthService {
     required String password,
     String? displayName,
   }) async {
-    await _client.auth.signUp(
-      email: email,
-      password: password,
-      data: {
-        'display_name': displayName ?? 'Usuário',
-      },
-    );
+    try {
+      await _client.auth.signUp(
+        email: email,
+        password: password,
+        data: {
+          'display_name': displayName ?? 'Usuário',
+        },
+      );
+    } on AuthException catch (e) {
+      throw Exception(e.message);
+    } catch (e) {
+      throw Exception('Erro ao cadastrar: $e');
+    }
   }
 
   /// Atualiza o perfil do usuário

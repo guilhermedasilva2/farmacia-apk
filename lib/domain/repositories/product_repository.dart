@@ -1,5 +1,5 @@
 import 'package:meu_app_inicial/domain/entities/product.dart';
-import 'package:meu_app_inicial/data/models/product_dto.dart';
+
 
 /// Interface de repositório para a entidade Product.
 ///
@@ -30,10 +30,10 @@ abstract class ProductRepository {
   Future<int> syncFromServer();
   
   /// Cria um novo produto no servidor.
-  Future<void> createProduct(ProductDto product);
+  Future<void> createProduct(Product product);
   
   /// Atualiza um produto existente no servidor.
-  Future<void> updateProduct(ProductDto product);
+  Future<void> updateProduct(Product product);
   
   /// Remove um produto do servidor.
   Future<void> deleteProduct(String id);

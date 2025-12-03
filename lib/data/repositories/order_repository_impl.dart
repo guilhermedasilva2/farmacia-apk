@@ -1,12 +1,17 @@
 import 'package:meu_app_inicial/domain/entities/order.dart';
+import 'package:meu_app_inicial/domain/repositories/order_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Repositório para gerenciar pedidos
-class OrderRepository {
-  final SupabaseClient _client = Supabase.instance.client;
+class OrderRepositoryImpl implements OrderRepository {
+  OrderRepositoryImpl({SupabaseClient? client})
+      : _client = client ?? Supabase.instance.client;
 
-  /// Cria um novo pedido
+  final SupabaseClient _client;
+
+  @override
   Future<String> createOrder(Order order) async {
+    // ... (existing implementation)
     final total = order.total;
 
     // Criar o pedido
@@ -31,7 +36,7 @@ class OrderRepository {
     return orderId;
   }
 
-  /// Busca pedidos de um usuário
+  @override
   Future<List<Order>> getUserOrders(String userId) async {
     try {
       final response = await _client
@@ -46,7 +51,7 @@ class OrderRepository {
     }
   }
 
-  /// Busca todos os pedidos (admin)
+  @override
   Future<List<Order>> getAllOrders() async {
     try {
       final response = await _client
@@ -60,19 +65,35 @@ class OrderRepository {
     }
   }
 
-  /// Atualiza o status de um pedido
+  @override
   Future<void> updateOrderStatus(String orderId, OrderStatus status) async {
     await _client.from('orders').update({
       'status': _orderStatusToString(status),
     }).eq('id', orderId);
   }
 
-  /// Deleta um pedido (admin)
+  @override
   Future<void> deleteOrder(String orderId) async {
     // Primeiro deletar os itens
     await _client.from('order_items').delete().eq('order_id', orderId);
     // Depois deletar o pedido
     await _client.from('orders').delete().eq('id', orderId);
+  }
+  
+  @override
+  Future<Order?> getOrderById(String orderId) async {
+    try {
+      final response = await _client
+          .from('orders')
+          .select('*, order_items(*)')
+          .eq('id', orderId)
+          .single();
+          
+      final orders = _parseOrders([response]);
+      return orders.isNotEmpty ? orders.first : null;
+    } catch (e) {
+      return null;
+    }
   }
 
   /// Parse de lista de pedidos
@@ -131,6 +152,7 @@ class OrderRepository {
   }
 
   /// Helper para obter nome amigável do status
+  @override
   String getStatusDisplayName(OrderStatus status) {
     switch (status) {
       case OrderStatus.pending:

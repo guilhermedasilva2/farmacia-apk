@@ -6,7 +6,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Serviço para gerenciar permissões baseadas em roles de usuário
 class UserRoleService {
-  final SupabaseClient _client = Supabase.instance.client;
+  UserRoleService({SupabaseClient? client}) : _client = client ?? Supabase.instance.client;
+
+  final SupabaseClient _client;
 
   /// Obtém o perfil do usuário atual
   Future<UserProfile?> getCurrentUserProfile() async {
