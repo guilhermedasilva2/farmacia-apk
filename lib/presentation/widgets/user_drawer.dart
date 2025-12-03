@@ -9,10 +9,13 @@ import 'package:meu_app_inicial/domain/entities/user_profile.dart';
 import 'package:meu_app_inicial/domain/entities/user_role.dart';
 import 'package:meu_app_inicial/presentation/widgets/role_badge.dart';
 import 'package:meu_app_inicial/core/utils/app_routes.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+
 
 class UserDrawer extends StatefulWidget {
-  const UserDrawer({super.key});
+  final AuthService? authService;
+  final UserRoleService? roleService;
+
+  const UserDrawer({super.key, this.authService, this.roleService});
 
   @override
   State<UserDrawer> createState() => _UserDrawerState();
@@ -21,19 +24,21 @@ class UserDrawer extends StatefulWidget {
 class _UserDrawerState extends State<UserDrawer> {
   String? _avatarPath;
   AvatarService? _avatarService;
-  final _authService = AuthService();
-  final _roleService = UserRoleService();
+  late final AuthService _authService;
+  late final UserRoleService _roleService;
   UserProfile? _userProfile;
 
   @override
   void initState() {
     super.initState();
+    _authService = widget.authService ?? AuthService();
+    _roleService = widget.roleService ?? UserRoleService();
     _init();
     _setupAuthListener();
   }
 
   void _setupAuthListener() {
-    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+    _authService.authStateChanges.listen((user) {
       if (mounted) {
         _init(); // Reload profile on auth change
       }
@@ -211,142 +216,149 @@ class _UserDrawerState extends State<UserDrawer> {
             ),
             const Divider(height: 1),
             
-            // Opções para visitantes
-            if (!isAuthenticated) ...[
-              ListTile(
-                leading: const Icon(Icons.login),
-                title: const Text('Fazer Login'),
-                subtitle: const Text('Entre para comprar produtos'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).pushNamed(AppRoutes.auth);
-                },
-              ),
-            ],
-            
-            // Opções para usuários autenticados
-            if (isAuthenticated) ...[
-              ListTile(
-                leading: const Icon(Icons.person_outline),
-                title: const Text('Alterar nome'),
-                onTap: () async {
-                  final controller = TextEditingController(text: displayName);
-                  final newName = await showDialog<String>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text('Seu nome'),
-                      content: TextField(
-                        controller: controller,
-                        decoration: const InputDecoration(hintText: 'Digite seu nome'),
-                        textInputAction: TextInputAction.done,
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    // Opções para visitantes
+                    if (!isAuthenticated) ...[
+                      ListTile(
+                        leading: const Icon(Icons.login),
+                        title: const Text('Fazer Login'),
+                        subtitle: const Text('Entre para comprar produtos'),
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          Navigator.of(context).pushNamed(AppRoutes.auth);
+                        },
                       ),
-                      actions: [
-                        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-                        FilledButton(onPressed: () => Navigator.pop(ctx, controller.text.trim()), child: const Text('Salvar')),
-                      ],
+                    ],
+                    
+                    // Opções para usuários autenticados
+                    if (isAuthenticated) ...[
+                      ListTile(
+                        leading: const Icon(Icons.person_outline),
+                        title: const Text('Alterar nome'),
+                        onTap: () async {
+                          final controller = TextEditingController(text: displayName);
+                          final newName = await showDialog<String>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: const Text('Seu nome'),
+                              content: TextField(
+                                controller: controller,
+                                decoration: const InputDecoration(hintText: 'Digite seu nome'),
+                                textInputAction: TextInputAction.done,
+                              ),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+                                FilledButton(onPressed: () => Navigator.pop(ctx, controller.text.trim()), child: const Text('Salvar')),
+                              ],
+                            ),
+                          );
+                          if (newName != null && newName.isNotEmpty) {
+                            final service = _avatarService ?? await AvatarService.create();
+                            _avatarService = service;
+                            await service.saveUserDisplayName(newName);
+                            await _authService.updateUserProfile(displayName: newName);
+                            if (mounted) setState(() {});
+                          }
+                        },
+                      ),
+                    ],
+                    
+                    // Opções para admin
+                    if (profile.role == UserRole.admin) ...[
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.admin_panel_settings, color: Colors.orange),
+                        title: const Text('Painel Administrativo'),
+                        subtitle: const Text('Gerenciar produtos e usuários'),
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Painel admin em desenvolvimento')),
+                          );
+                        },
+                      ),
+                    ],
+                    
+                    // Opções comuns
+                    const Divider(height: 1),
+                    ListTile(
+                      leading: const Icon(Icons.policy_outlined),
+                      title: const Text('Políticas e Termos'),
+                      subtitle: const Text('Leia novamente'),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        Navigator.of(context).pushNamed('/policy', arguments: {'doc': 'privacy'});
+                      },
                     ),
-                  );
-                  if (newName != null && newName.isNotEmpty) {
-                    final service = _avatarService ?? await AvatarService.create();
-                    _avatarService = service;
-                    await service.saveUserDisplayName(newName);
-                    await _authService.updateUserProfile(displayName: newName);
-                    if (mounted) setState(() {});
-                  }
-                },
+                    if (isAuthenticated) ...[
+                      ListTile(
+                        leading: const Icon(Icons.shopping_bag_outlined),
+                        title: const Text('Meus Pedidos'),
+                        subtitle: const Text('Veja seus produtos para comprar'),
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          Navigator.of(context).pushNamed(AppRoutes.orders);
+                        },
+                      ),
+                    ],
+                    ListTile(
+                      leading: const Icon(Icons.medication_outlined),
+                      title: const Text('Lembretes de medicação'),
+                      subtitle: const Text('Gerencie lembretes rapidamente'),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        Navigator.of(context).pushNamed(AppRoutes.reminders);
+                      },
+                    ),
+                    
+                    // Admin stock management
+                    if (profile.role == UserRole.admin) ...[
+                      ListTile(
+                        leading: const Icon(Icons.inventory_2_outlined, color: Colors.orange),
+                        title: const Text('Gerenciar Estoque'),
+                        subtitle: const Text('Controle de produtos (Admin)'),
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          Navigator.of(context).pushNamed(AppRoutes.adminProducts);
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.shopping_cart_outlined, color: Colors.orange),
+                        title: const Text('Gerenciar Pedidos'),
+                        subtitle: const Text('Visualizar e gerenciar pedidos (Admin)'),
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          Navigator.of(context).pushNamed(AppRoutes.adminOrders);
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.category_outlined, color: Colors.orange),
+                        title: const Text('Gerenciar Categorias'),
+                        subtitle: const Text('Organizar produtos por categorias (Admin)'),
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          Navigator.of(context).pushNamed(AppRoutes.adminCategories);
+                        },
+                      ),
+                    ],
+                    
+                    // Logout para usuários autenticados
+                    if (isAuthenticated) ...[
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.logout, color: Colors.red),
+                        title: const Text('Sair', style: TextStyle(color: Colors.red)),
+                        onTap: _handleLogout,
+                      ),
+                    ],
+                  ],
+                ),
               ),
-            ],
-            
-            // Opções para admin
-            if (profile.role == UserRole.admin) ...[
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.admin_panel_settings, color: Colors.orange),
-                title: const Text('Painel Administrativo'),
-                subtitle: const Text('Gerenciar produtos e usuários'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Painel admin em desenvolvimento')),
-                  );
-                },
-              ),
-            ],
-            
-            // Opções comuns
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.policy_outlined),
-              title: const Text('Políticas e Termos'),
-              subtitle: const Text('Leia novamente'),
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pushNamed('/policy', arguments: {'doc': 'privacy'});
-              },
             ),
-            if (isAuthenticated) ...[
-              ListTile(
-                leading: const Icon(Icons.shopping_bag_outlined),
-                title: const Text('Meus Pedidos'),
-                subtitle: const Text('Veja seus produtos para comprar'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).pushNamed(AppRoutes.orders);
-                },
-              ),
-            ],
-            ListTile(
-              leading: const Icon(Icons.medication_outlined),
-              title: const Text('Lembretes de medicação'),
-              subtitle: const Text('Gerencie lembretes rapidamente'),
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pushNamed(AppRoutes.reminders);
-              },
-            ),
             
-            // Admin stock management
-            if (profile.role == UserRole.admin) ...[
-              ListTile(
-                leading: const Icon(Icons.inventory_2_outlined, color: Colors.orange),
-                title: const Text('Gerenciar Estoque'),
-                subtitle: const Text('Controle de produtos (Admin)'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).pushNamed(AppRoutes.adminProducts);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.shopping_cart_outlined, color: Colors.orange),
-                title: const Text('Gerenciar Pedidos'),
-                subtitle: const Text('Visualizar e gerenciar pedidos (Admin)'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).pushNamed(AppRoutes.adminOrders);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.category_outlined, color: Colors.orange),
-                title: const Text('Gerenciar Categorias'),
-                subtitle: const Text('Organizar produtos por categorias (Admin)'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).pushNamed(AppRoutes.adminCategories);
-                },
-              ),
-            ],
-            
-            // Logout para usuários autenticados
-            if (isAuthenticated) ...[
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.logout, color: Colors.red),
-                title: const Text('Sair', style: TextStyle(color: Colors.red)),
-                onTap: _handleLogout,
-              ),
-            ],
-            
-            const Spacer(),
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Text(

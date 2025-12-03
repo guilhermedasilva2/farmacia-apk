@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:meu_app_inicial/data/models/product_dto.dart';
+
 import 'package:meu_app_inicial/domain/entities/product.dart';
 import 'package:meu_app_inicial/domain/entities/category.dart';
-import 'package:meu_app_inicial/data/repositories/category_repository.dart';
+
+import 'package:meu_app_inicial/data/repositories/category_repository_impl.dart';
 
 class AdminProductFormDialog extends StatefulWidget {
   const AdminProductFormDialog({super.key, this.product});
@@ -22,7 +23,7 @@ class _AdminProductFormDialogState extends State<AdminProductFormDialog> {
   late TextEditingController _quantityController;
   String? _selectedCategoryId;
   List<Category> _categories = [];
-  final _categoryRepository = CategoryRepository();
+  final _categoryRepository = CategoryRepositoryImpl();
 
   @override
   void initState() {
@@ -66,7 +67,7 @@ class _AdminProductFormDialogState extends State<AdminProductFormDialog> {
     final price = double.tryParse(_priceController.text.replaceAll(',', '.')) ?? 0.0;
     final quantity = int.tryParse(_quantityController.text) ?? 0;
 
-    final dto = ProductDto(
+    final product = Product(
       id: widget.product?.id ?? '',
       name: _nameController.text.trim(),
       description: _descriptionController.text.trim(),
@@ -77,7 +78,7 @@ class _AdminProductFormDialogState extends State<AdminProductFormDialog> {
       categoryId: _selectedCategoryId,
     );
 
-    Navigator.of(context).pop(dto);
+    Navigator.of(context).pop(product);
   }
 
   @override

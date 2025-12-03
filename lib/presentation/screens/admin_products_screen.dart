@@ -3,9 +3,10 @@ import 'package:meu_app_inicial/data/models/product_dto.dart';
 import 'package:meu_app_inicial/data/models/remote_page.dart';
 import 'package:meu_app_inicial/data/models/page_cursor.dart';
 import 'package:meu_app_inicial/domain/entities/product.dart';
-import 'package:meu_app_inicial/data/repositories/product_repository.dart';
+import 'package:meu_app_inicial/domain/repositories/product_repository.dart';
+import 'package:meu_app_inicial/data/repositories/product_repository_impl.dart';
 import 'package:meu_app_inicial/presentation/widgets/admin_product_form_dialog.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+
 
 
 class AdminProductsScreen extends StatefulWidget {
@@ -30,7 +31,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
     final local = await SharedPreferencesProductLocalDataSource.create();
     ProductRemoteDataSource remote;
     try {
-      remote = SupabaseProductRemoteDataSource(client: Supabase.instance.client);
+      remote = SupabaseProductRemoteDataSource();
     } catch (_) {
       remote = _FallbackRemote();
     }
@@ -71,7 +72,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
 
   Future<void> _addProduct() async {
 
-    final result = await showDialog<ProductDto>(
+    final result = await showDialog<Product>(
       context: context,
       builder: (ctx) => const AdminProductFormDialog(),
     );
@@ -102,7 +103,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
   }
 
   Future<void> _editProduct(Product product) async {
-    final result = await showDialog<ProductDto>(
+    final result = await showDialog<Product>(
       context: context,
       builder: (ctx) => AdminProductFormDialog(product: product),
     );

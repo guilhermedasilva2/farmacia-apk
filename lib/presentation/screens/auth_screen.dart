@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:meu_app_inicial/core/services/auth_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -53,16 +53,12 @@ class _AuthScreenState extends State<AuthScreen> {
       if (mounted) {
         Navigator.of(context).pop();
       }
-    } on AuthException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message), backgroundColor: Colors.red),
-        );
-      }
     } catch (e) {
       if (mounted) {
+        // Remove "Exception: " prefix if present
+        final message = e.toString().replaceAll('Exception: ', '');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text(message), backgroundColor: Colors.red),
         );
       }
     } finally {

@@ -4,11 +4,12 @@ import 'package:meu_app_inicial/data/models/remote_page.dart';
 import 'package:meu_app_inicial/data/models/page_cursor.dart';
 import 'package:meu_app_inicial/domain/entities/product.dart';
 import 'package:meu_app_inicial/domain/entities/user_role.dart';
-import 'package:meu_app_inicial/data/repositories/product_repository.dart';
+import 'package:meu_app_inicial/domain/repositories/product_repository.dart';
+import 'package:meu_app_inicial/data/repositories/product_repository_impl.dart';
 import 'package:meu_app_inicial/core/services/user_role_service.dart';
 import 'package:meu_app_inicial/core/services/cart_service.dart';
 import 'package:meu_app_inicial/core/utils/app_routes.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+
 import 'package:meu_app_inicial/presentation/widgets/admin_product_form_dialog.dart';
 import 'package:meu_app_inicial/presentation/widgets/product_actions_dialog.dart';
 
@@ -58,7 +59,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
     final local = await SharedPreferencesProductLocalDataSource.create();
     ProductRemoteDataSource remote;
     try {
-      remote = SupabaseProductRemoteDataSource(client: Supabase.instance.client);
+      remote = SupabaseProductRemoteDataSource();
     } catch (_) {
       remote = _FallbackRemote();
     }
@@ -127,7 +128,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
   }
 
   Future<void> _handleEdit(Product product) async {
-    final result = await showDialog<ProductDto>(
+    final result = await showDialog<Product>(
       context: context,
       builder: (ctx) => AdminProductFormDialog(product: product),
     );
@@ -406,7 +407,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
       floatingActionButton: _currentRole.canManageProducts
           ? FloatingActionButton.extended(
               onPressed: () async {
-                final result = await showDialog<ProductDto>(
+                final result = await showDialog<Product>(
                   context: context,
                   builder: (ctx) => const AdminProductFormDialog(),
                 );

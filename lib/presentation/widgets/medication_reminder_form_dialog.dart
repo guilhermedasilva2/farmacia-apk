@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:meu_app_inicial/presentation/bloc/medication_reminder_form_bloc.dart';
 import 'package:meu_app_inicial/domain/entities/medication_reminder.dart';
 import 'package:meu_app_inicial/domain/repositories/medication_reminder_repository.dart';
-import 'package:meu_app_inicial/data/repositories/medication_reminder_repository.dart';
+import 'package:meu_app_inicial/data/repositories/medication_reminder_repository_impl.dart';
 
 Future<MedicationReminder?> showMedicationReminderFormDialog(
   BuildContext context, {

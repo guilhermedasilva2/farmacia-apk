@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:meu_app_inicial/domain/entities/product.dart';
 import 'package:meu_app_inicial/core/services/cart_service.dart';
+import 'package:meu_app_inicial/core/services/auth_service.dart';
 import 'package:meu_app_inicial/core/utils/app_routes.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+
 
 class ProductDetailsScreen extends StatefulWidget {
   const ProductDetailsScreen({super.key});
@@ -15,12 +16,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   final CartService _cartService = CartService();
 
   Future<void> _handlePurchase(Product product) async {
-    final session = Supabase.instance.client.auth.currentSession;
-    final currentUser = Supabase.instance.client.auth.currentUser;
+    final authService = AuthService();
+    final currentUser = authService.currentUser;
+    final isSessionValid = authService.isSessionValid;
 
-    if (currentUser == null || session == null || session.isExpired) {
+    if (currentUser == null || !isSessionValid) {
       if (currentUser != null) {
-        await Supabase.instance.client.auth.signOut();
+        await authService.signOut();
       }
 
       if (!mounted) return;

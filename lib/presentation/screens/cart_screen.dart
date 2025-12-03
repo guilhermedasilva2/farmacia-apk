@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:meu_app_inicial/core/services/cart_service.dart';
+import 'package:meu_app_inicial/core/services/auth_service.dart';
 import 'package:meu_app_inicial/domain/entities/order.dart';
-import 'package:meu_app_inicial/data/repositories/order_repository.dart';
+
+import 'package:meu_app_inicial/data/repositories/order_repository_impl.dart';
 import 'package:meu_app_inicial/data/models/product_dto.dart';
-import 'package:meu_app_inicial/data/repositories/product_repository.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:meu_app_inicial/data/repositories/product_repository_impl.dart';
+
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -38,7 +40,8 @@ class _CartScreenState extends State<CartScreen> {
   Future<void> _confirmPurchase() async {
     if (_cartService.isEmpty) return;
 
-    final currentUser = Supabase.instance.client.auth.currentUser;
+    final authService = AuthService();
+    final currentUser = authService.currentUser;
     if (currentUser == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -92,11 +95,11 @@ class _CartScreenState extends State<CartScreen> {
         status: OrderStatus.pending,
       );
 
-      final orderRepo = OrderRepository();
+      final orderRepo = OrderRepositoryImpl();
       await orderRepo.createOrder(order);
 
       // Atualizar estoque de todos os produtos
-      final remote = SupabaseProductRemoteDataSource(client: Supabase.instance.client);
+      final remote = SupabaseProductRemoteDataSource();
       
       for (final cartItem in _cartService.items) {
         final product = cartItem.product;

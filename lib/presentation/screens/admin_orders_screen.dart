@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:meu_app_inicial/domain/entities/order.dart';
-import 'package:meu_app_inicial/data/repositories/order_repository.dart';
+import 'package:meu_app_inicial/domain/repositories/order_repository.dart';
+import 'package:meu_app_inicial/data/repositories/order_repository_impl.dart';
 
 class AdminOrdersScreen extends StatefulWidget {
   const AdminOrdersScreen({super.key});
@@ -10,7 +11,7 @@ class AdminOrdersScreen extends StatefulWidget {
 }
 
 class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
-  final OrderRepository _repository = OrderRepository();
+  final OrderRepository _repository = OrderRepositoryImpl();
   List<Order> _orders = [];
   bool _isLoading = true;
 

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:meu_app_inicial/data/models/category_dto.dart';
 import 'package:meu_app_inicial/data/repositories/categories_local_dao.dart';
-import 'package:meu_app_inicial/data/repositories/category_repository.dart';
+import 'package:meu_app_inicial/domain/repositories/category_repository.dart';
+import 'package:meu_app_inicial/data/repositories/category_repository_impl.dart';
 import 'package:meu_app_inicial/core/services/user_role_service.dart';
 import 'package:meu_app_inicial/domain/entities/user_role.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,7 +15,7 @@ class CategoriesScreen extends StatefulWidget {
 }
 
 class _CategoriesScreenState extends State<CategoriesScreen> {
-  final CategoryRepository _repository = CategoryRepository();
+  final CategoryRepository _repository = CategoryRepositoryImpl();
   CategoriesLocalDao? _localDao;
   Future<List<CategoryDto>>? _future;
   final UserRoleService _roleService = UserRoleService();

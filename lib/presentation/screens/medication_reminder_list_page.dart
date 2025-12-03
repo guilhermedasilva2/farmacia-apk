@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:meu_app_inicial/domain/entities/medication_reminder.dart';
 import 'package:meu_app_inicial/domain/repositories/medication_reminder_repository.dart';
-import 'package:meu_app_inicial/data/repositories/medication_reminder_repository.dart';
+import 'package:meu_app_inicial/data/repositories/medication_reminder_repository_impl.dart';
 import 'package:meu_app_inicial/presentation/widgets/medication_reminder_form_dialog.dart';
 
 

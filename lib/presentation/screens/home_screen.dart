@@ -5,16 +5,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:meu_app_inicial/core/services/prefs_service.dart';
 import 'package:meu_app_inicial/core/services/consent_service.dart';
 import 'package:meu_app_inicial/core/services/cart_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:meu_app_inicial/core/services/auth_service.dart';
 import 'package:meu_app_inicial/core/utils/app_routes.dart';
 import 'package:meu_app_inicial/presentation/widgets/user_drawer.dart';
 import 'package:meu_app_inicial/domain/entities/product.dart';
-import 'package:meu_app_inicial/data/repositories/product_repository.dart';
+import 'package:meu_app_inicial/domain/repositories/product_repository.dart';
+import 'package:meu_app_inicial/data/repositories/product_repository_impl.dart';
 import 'package:meu_app_inicial/data/models/product_dto.dart';
 import 'package:meu_app_inicial/data/models/remote_page.dart';
 import 'package:meu_app_inicial/data/models/page_cursor.dart';
 import 'package:meu_app_inicial/domain/entities/category.dart';
-import 'package:meu_app_inicial/data/repositories/category_repository.dart';
+import 'package:meu_app_inicial/domain/repositories/category_repository.dart';
+import 'package:meu_app_inicial/data/repositories/category_repository_impl.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -30,10 +32,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<List<Product>>? _productsFuture;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  final CategoryRepository _categoryRepository = CategoryRepository();
+  final CategoryRepository _categoryRepository = CategoryRepositoryImpl();
   List<Category> _categories = [];
   final CartService _cartService = CartService();
 
+
+  final _authService = AuthService();
 
   @override
   void initState() {
@@ -45,7 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _setupAuthListener() {
-    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+    _authService.authStateChanges.listen((user) {
       if (mounted) {
         setState(() {
           // Rebuild UI on auth change
@@ -84,7 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final local = await SharedPreferencesProductLocalDataSource.create();
     ProductRemoteDataSource remote;
     try {
-      remote = SupabaseProductRemoteDataSource(client: Supabase.instance.client);
+      remote = SupabaseProductRemoteDataSource();
     } catch (_) {
       remote = _FallbackRemote();
     }
@@ -163,12 +167,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handlePurchase(Product product) async {
-    final session = Supabase.instance.client.auth.currentSession;
-    final currentUser = Supabase.instance.client.auth.currentUser;
+    final currentUser = _authService.currentUser;
+    final isSessionValid = _authService.isSessionValid;
     
-    if (currentUser == null || session == null || session.isExpired) {
+    if (currentUser == null || !isSessionValid) {
       if (currentUser != null) {
-         await Supabase.instance.client.auth.signOut();
+         await _authService.signOut();
       }
       
       if (!mounted) return;
