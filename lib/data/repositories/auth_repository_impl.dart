@@ -64,9 +64,7 @@ class SupabaseAuthRepository implements AuthRepository {
       email: supabaseUser.email ?? '',
       name: supabaseUser.userMetadata?['name'] as String?,
       avatarUrl: supabaseUser.userMetadata?['avatar_url'] as String?,
-      createdAt: supabaseUser.createdAt != null 
-          ? DateTime.parse(supabaseUser.createdAt)
-          : null,
+      createdAt: DateTime.tryParse(supabaseUser.createdAt),
     );
   }
 }
