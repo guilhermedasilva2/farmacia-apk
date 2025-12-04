@@ -2,7 +2,7 @@
 
 **Última atualização: 03 de Dezembro de 2025**
 
-A **FarmaFox** ("nós", "nosso" ou "aplicativo") valoriza a sua privacidade e está comprometida em proteger os seus dados pessoais. Esta Política de Privacidade explica como coletamos, usamos, armazenamos e protegemos suas informações, em conformidade com a **Lei Geral de Proteção de Dados Pessoais (LGPD - Lei nº 13.709/2018)**.
+A **Pharmaconnect** ("nós", "nosso" ou "aplicativo") valoriza a sua privacidade e está comprometida em proteger os seus dados pessoais. Esta Política de Privacidade explica como coletamos, usamos, armazenamos e protegemos suas informações, em conformidade com a **Lei Geral de Proteção de Dados Pessoais (LGPD - Lei nº 13.709/2018)**.
 
 Ao utilizar nosso aplicativo, você concorda com os termos descritos nesta política.
 
@@ -37,7 +37,7 @@ Utilizamos suas informações para as seguintes finalidades:
 
 ## 3. Compartilhamento de Dados
 
-A FarmaFox **não vende** seus dados pessoais. Compartilhamos informações apenas quando estritamente necessário:
+A Pharmaconnect **não vende** seus dados pessoais. Compartilhamos informações apenas quando estritamente necessário:
 
 *   **Parceiros Logísticos:** Nome e endereço para realizar a entrega dos seus produtos.
 *   **Processadores de Pagamento:** Para processar suas transações financeiras com segurança.
@@ -65,7 +65,7 @@ Como titular dos dados, você tem direito a:
 *   **Eliminação:** Solicitar a exclusão de seus dados pessoais (exceto quando a manutenção for necessária por lei).
 *   **Revogação do Consentimento:** Retirar seu consentimento a qualquer momento.
 
-Para exercer seus direitos, entre em contato conosco através do canal de suporte no aplicativo ou pelo e-mail: **privacidade@farmafox.com.br**.
+Para exercer seus direitos, entre em contato conosco através do canal de suporte no aplicativo ou pelo e-mail: **privacidade@pharmaconnect.com.br**.
 
 ---
 
@@ -81,6 +81,6 @@ Podemos atualizar esta política periodicamente para refletir melhorias no aplic
 
 ---
 
-**FarmaFox - Saúde e Tecnologia ao seu alcance.**
+**Pharmaconnect - Saúde e Tecnologia ao seu alcance.**
 CNPJ: 00.000.000/0001-00
 Endereço: Av. Tecnologia, 1000 - São Paulo, SP

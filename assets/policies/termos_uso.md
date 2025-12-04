@@ -2,13 +2,13 @@
 
 **Última atualização: 03 de Dezembro de 2025**
 
-Bem-vindo à **FarmaFox**! Estes Termos de Uso regem o acesso e a utilização do nosso aplicativo. Ao baixar, instalar ou usar o app, você concorda em cumprir estes termos.
+Bem-vindo à **Pharmaconnect**! Estes Termos de Uso regem o acesso e a utilização do nosso aplicativo. Ao baixar, instalar ou usar o app, você concorda em cumprir estes termos.
 
 ---
 
 ## 1. Aceitação dos Termos
 
-Ao criar uma conta ou utilizar os serviços da FarmaFox, você declara que leu, compreendeu e aceita integralmente estes Termos de Uso e nossa Política de Privacidade. Se você não concordar com algum item, não utilize o aplicativo.
+Ao criar uma conta ou utilizar os serviços da Pharmaconnect, você declara que leu, compreendeu e aceita integralmente estes Termos de Uso e nossa Política de Privacidade. Se você não concordar com algum item, não utilize o aplicativo.
 
 ## 2. Uso do Aplicativo
 
@@ -36,13 +36,13 @@ Você é responsável por manter a confidencialidade de sua senha e por todas as
 
 ## 4. Entregas
 
-O prazo de entrega é uma estimativa e pode variar de acordo com a localização e fatores logísticos. A FarmaFox não se responsabiliza por atrasos decorrentes de casos fortuitos ou força maior.
+O prazo de entrega é uma estimativa e pode variar de acordo com a localização e fatores logísticos. A Pharmaconnect não se responsabiliza por atrasos decorrentes de casos fortuitos ou força maior.
 
 ---
 
 ## 5. Isenção de Responsabilidade Médica
 
-**IMPORTANTE:** O aplicativo FarmaFox, incluindo a funcionalidade de lembretes de medicação, é uma ferramenta de apoio e **não substitui o aconselhamento médico profissional**.
+**IMPORTANTE:** O aplicativo Pharmaconnect, incluindo a funcionalidade de lembretes de medicação, é uma ferramenta de apoio e **não substitui o aconselhamento médico profissional**.
 *   Nunca ignore orientações médicas ou atrase a busca por tratamento devido a informações contidas no aplicativo.
 *   Em caso de dúvidas sobre medicamentos, consulte sempre um farmacêutico ou médico.
 
@@ -50,7 +50,7 @@ O prazo de entrega é uma estimativa e pode variar de acordo com a localização
 
 ## 6. Propriedade Intelectual
 
-Todo o conteúdo do aplicativo (logotipos, textos, imagens, software) é propriedade exclusiva da FarmaFox ou de seus licenciadores e é protegido pelas leis de direitos autorais e propriedade intelectual.
+Todo o conteúdo do aplicativo (logotipos, textos, imagens, software) é propriedade exclusiva da Pharmaconnect ou de seus licenciadores e é protegido pelas leis de direitos autorais e propriedade intelectual.
 
 ---
 
@@ -68,6 +68,6 @@ Reservamo-nos o direito de modificar estes Termos a qualquer momento. O uso cont
 
 ## 9. Contato e Foro
 
-Para dúvidas ou suporte, entre em contato pelo e-mail: **suporte@farmafox.com.br**.
+Para dúvidas ou suporte, entre em contato pelo e-mail: **suporte@pharmaconnect.com.br**.
 
 Fica eleito o Foro da Comarca de São Paulo/SP para dirimir quaisquer questões oriundas destes Termos.
