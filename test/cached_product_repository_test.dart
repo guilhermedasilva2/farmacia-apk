@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meu_app_inicial/data/models/product_dto.dart';
-import 'package:meu_app_inicial/data/models/remote_page.dart';
-import 'package:meu_app_inicial/data/models/page_cursor.dart';
-import 'package:meu_app_inicial/domain/entities/product.dart';
-import 'package:meu_app_inicial/data/repositories/product_repository_impl.dart';
-import 'package:meu_app_inicial/domain/repositories/product_repository.dart';
+import 'package:meu_app_inicial/features/products/infrastructure/dtos/product_dto.dart';
+import 'package:meu_app_inicial/services/remote_page.dart';
+import 'package:meu_app_inicial/services/page_cursor.dart';
+import 'package:meu_app_inicial/features/products/domain/entities/product.dart';
+import 'package:meu_app_inicial/features/products/infrastructure/repositories/product_repository_impl.dart';
+import 'package:meu_app_inicial/features/products/domain/repositories/product_repository.dart';
 
 class FakeRemote implements ProductRemoteDataSource {
   FakeRemote(this._dtos, {this.shouldThrow = false});

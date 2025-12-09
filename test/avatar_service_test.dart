@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
-import 'package:meu_app_inicial/core/services/avatar_service.dart';
+import 'package:meu_app_inicial/features/profile/infrastructure/services/avatar_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {

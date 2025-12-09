@@ -93,6 +93,28 @@ O aplicativo implementa um sistema robusto de sincronização de dados:
   ```
 
 
+## 🎨 Melhorias Visuais Implementadas
+
+### Design Moderno
+- ✨ **Gradientes vibrantes** no AppBar (teal → cyan)
+- ✍️ **Google Fonts Poppins** para tipografia premium
+- 🔲 **Bordas arredondadas** (16px) em todos os cards
+- 🎭 **Sombras coloridas** sutis em teal
+- 🌈 **Fundo cinza claro** para melhor contraste
+
+### Animações e Interações
+- 🎬 **Hero Animations** - transições suaves entre telas
+- ✨ **Shimmer Loading** - skeleton screens profissionais
+- ♾️ **Scroll bidirecional infinito** nos carrosséis
+- 💬 **Snackbars customizadas** com ícones e cores
+
+### UX Melhorada
+- 🛒 **Badge "99+"** no carrinho para grandes quantidades
+- 📱 **Layout organizado** com hierarquia visual clara
+- 🔍 **Campo de busca premium** com bordas animadas
+- 👤 **Loading no drawer** (sem flash de "Visitante")
+
+
 ## ⚙️ Configuração e Instalação
 
 ### Pré-requisitos

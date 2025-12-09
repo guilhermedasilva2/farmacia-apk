@@ -3,11 +3,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
-import 'package:meu_app_inicial/presentation/widgets/user_drawer.dart';
-import 'package:meu_app_inicial/core/services/auth_service.dart';
-import 'package:meu_app_inicial/core/services/user_role_service.dart';
-import 'package:meu_app_inicial/domain/entities/user_profile.dart';
-import 'package:meu_app_inicial/domain/entities/user_role.dart';
+import 'package:meu_app_inicial/features/app/widgets/user_drawer.dart';
+import 'package:meu_app_inicial/features/auth/infrastructure/services/auth_service.dart';
+import 'package:meu_app_inicial/features/auth/infrastructure/services/user_role_service.dart';
+import 'package:meu_app_inicial/features/profile/domain/entities/user_profile.dart';
+import 'package:meu_app_inicial/features/auth/domain/entities/user_role.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

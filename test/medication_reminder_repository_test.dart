@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meu_app_inicial/domain/entities/medication_reminder.dart';
-import 'package:meu_app_inicial/data/repositories/medication_reminder_repository_impl.dart';
+import 'package:meu_app_inicial/features/medication_reminders/domain/entities/medication_reminder.dart';
+import 'package:meu_app_inicial/features/medication_reminders/infrastructure/repositories/medication_reminder_repository_impl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {

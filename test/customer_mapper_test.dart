@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meu_app_inicial/data/models/customer_dto.dart';
-import 'package:meu_app_inicial/data/mappers/customer_mapper.dart';
+import 'package:meu_app_inicial/features/profile/infrastructure/dtos/customer_dto.dart';
+import 'package:meu_app_inicial/features/profile/infrastructure/mappers/customer_mapper.dart';
 
 void main() {
   test('Customer mapper toEntity/toDto roundtrip', () {
