@@ -25,6 +25,11 @@ dependencies:
   equatable: ^2.0.5
   uuid: ^4.4.2
   
+  # Segurança e Autenticação
+  flutter_secure_storage: ^9.0.0
+  local_auth: ^2.1.0
+  connectivity_plus: ^6.0.0
+  
   # Dependência para o indicador de páginas do onboarding
   dots_indicator: ^3.0.0
   
