@@ -255,18 +255,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.teal.shade700, Colors.cyan.shade600],
+              colors: [colorScheme.primary, colorScheme.secondary], // Adaptative gradient using primary/secondary
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
           ),
         ),
-        foregroundColor: Colors.white,
+        foregroundColor: colorScheme.onPrimary,
         elevation: 0,
         actions: [
           IconButton(
@@ -294,8 +297,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   top: 8,
                   child: Container(
                     padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
+                    decoration: BoxDecoration(
+                      color: colorScheme.error,
                       shape: BoxShape.circle,
                     ),
                     constraints: const BoxConstraints(
@@ -306,8 +309,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       _cartService.itemCount > 99 
                           ? '99+' 
                           : '${_cartService.itemCount}',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: colorScheme.onError,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                       ),
@@ -322,18 +325,17 @@ class _HomeScreenState extends State<HomeScreen> {
       drawer: const UserDrawer(),
       floatingActionButton: FloatingActionButton(
         onPressed: _handleConsentManagement,
-        backgroundColor: Colors.teal,
-        foregroundColor: Colors.white,
+        // Theme handles FAB colors automatically based on AppTheme
         child: const Icon(Icons.privacy_tip_outlined),
       ),
       body: Container(
-        color: Colors.grey.shade100,
+        color: colorScheme.surface, // Use theme surface
         child: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Container(
-                color: Colors.white,
+                color: colorScheme.surface,
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -344,7 +346,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontSize: 26,
                       fontWeight: FontWeight.bold,
                       letterSpacing: -0.5,
-                      color: Colors.teal.shade800,
+                      color: colorScheme.onSurface, // Uses Teal[800] defined in Theme
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -352,21 +354,21 @@ class _HomeScreenState extends State<HomeScreen> {
                     controller: _searchController,
                     decoration: InputDecoration(
                       hintText: 'Buscar produtos...',
-                      hintStyle: GoogleFonts.poppins(),
-                      prefixIcon: const Icon(Icons.search, color: Colors.teal),
+                      hintStyle: GoogleFonts.poppins(color: colorScheme.onSurfaceVariant),
+                      prefixIcon: Icon(Icons.search, color: colorScheme.primary),
                       filled: true,
-                      fillColor: Colors.grey.shade50,
+                      fillColor: theme.inputDecorationTheme.fillColor ?? colorScheme.surfaceContainerHighest,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide: BorderSide.none,
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: Colors.grey.shade200),
+                        borderSide: BorderSide(color: colorScheme.outlineVariant),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: Colors.teal.shade400, width: 2),
+                        borderSide: BorderSide(color: colorScheme.primary, width: 2),
                       ),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                     ),
@@ -396,11 +398,12 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                                  Icon(Icons.error_outline, size: 48, color: colorScheme.error),
                                   const SizedBox(height: 16),
                                   Text(
                                     'Erro ao carregar produtos:\n${snapshot.error}',
                                     textAlign: TextAlign.center,
+                                    style: TextStyle(color: colorScheme.error),
                                   ),
                                   const SizedBox(height: 16),
                                   ElevatedButton(
@@ -432,13 +435,13 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(Icons.search_off, size: 64, color: Colors.grey),
+                                Icon(Icons.search_off, size: 64, color: colorScheme.outline),
                                 const SizedBox(height: 16),
                                 Text(
                                   _searchQuery.isNotEmpty 
                                     ? 'Nenhum produto encontrado para "$_searchQuery".'
                                     : 'Nenhum produto disponível no momento.',
-                                  style: TextStyle(color: Colors.grey[600]),
+                                  style: TextStyle(color: colorScheme.onSurfaceVariant),
                                 ),
                               ],
                             ),
@@ -507,6 +510,9 @@ class _UncategorizedProductList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -518,7 +524,7 @@ class _UncategorizedProductList extends StatelessWidget {
                 width: 4,
                 height: 24,
                 decoration: BoxDecoration(
-                  color: Colors.teal,
+                  color: colorScheme.primary,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -528,6 +534,7 @@ class _UncategorizedProductList extends StatelessWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
                 ),
               ),
             ],
@@ -539,10 +546,11 @@ class _UncategorizedProductList extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             child: Card(
               elevation: 2,
-              shadowColor: Colors.teal.withValues(alpha: 0.15),
+              shadowColor: colorScheme.primary.withValues(alpha: 0.15),
+              color: theme.brightness == Brightness.light ? Colors.white : colorScheme.surfaceContainer, // White in light mode, dark container in dark mode
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.grey.shade200, width: 1),
+                side: BorderSide(color: colorScheme.outlineVariant, width: 1),
               ),
               clipBehavior: Clip.antiAlias,
               child: InkWell(
@@ -565,15 +573,15 @@ class _UncategorizedProductList extends StatelessWidget {
                                   errorBuilder: (_, __, ___) => Container(
                                     width: 80,
                                     height: 80,
-                                    color: Colors.grey[200],
-                                    child: const Icon(Icons.medication, color: Colors.grey),
+                                    color: colorScheme.surfaceContainerHighest,
+                                    child: Icon(Icons.medication, color: colorScheme.onSurfaceVariant),
                                   ),
                                 )
                               : Container(
                                   width: 80,
                                   height: 80,
-                                  color: Colors.grey[200],
-                                  child: const Icon(Icons.medication, color: Colors.grey),
+                                  color: colorScheme.surfaceContainerHighest,
+                                  child: Icon(Icons.medication, color: colorScheme.onSurfaceVariant),
                                 ),
                         ),
                       ),
@@ -584,9 +592,10 @@ class _UncategorizedProductList extends StatelessWidget {
                           children: [
                             Text(
                               p.name,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
+                                color: colorScheme.onSurface,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -594,7 +603,7 @@ class _UncategorizedProductList extends StatelessWidget {
                               p.description,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey[600],
+                                color: colorScheme.onSurfaceVariant,
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
@@ -604,7 +613,7 @@ class _UncategorizedProductList extends StatelessWidget {
                               'Estoque: ${p.quantity} unidades',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: hasStock ? Colors.grey[700] : Colors.red,
+                                color: hasStock ? colorScheme.onSurfaceVariant : colorScheme.error,
                                 fontWeight: hasStock ? FontWeight.normal : FontWeight.bold,
                               ),
                             ),
@@ -614,18 +623,18 @@ class _UncategorizedProductList extends StatelessWidget {
                               children: [
                                 Text(
                                   'R\$ ${p.price.toStringAsFixed(2)}',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.teal,
+                                    color: colorScheme.primary,
                                   ),
                                 ),
                                 if (hasStock)
                                   ElevatedButton(
                                     onPressed: () => onPurchase(p),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.teal,
-                                      foregroundColor: Colors.white,
+                                      backgroundColor: colorScheme.primary,
+                                      foregroundColor: colorScheme.onPrimary,
                                       padding: const EdgeInsets.symmetric(horizontal: 16),
                                       minimumSize: const Size(0, 36),
                                     ),
@@ -635,15 +644,15 @@ class _UncategorizedProductList extends StatelessWidget {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: Colors.red[50],
+                                      color: colorScheme.errorContainer,
                                       borderRadius: BorderRadius.circular(4),
-                                      border: Border.all(color: Colors.red[200]!),
+                                      border: Border.all(color: colorScheme.error),
                                     ),
                                     child: Text(
                                       'Esgotado',
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: Colors.red[700],
+                                        color: colorScheme.error,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -703,7 +712,10 @@ class _CategoryCarouselState extends State<_CategoryCarousel> {
 
   @override
   Widget build(BuildContext context) {
-    // if (widget.products.isEmpty) return const SizedBox.shrink(); // REMOVIDO: Mostrar categoria mesmo vazia
+    if (widget.products.isEmpty) return const SizedBox.shrink(); 
+
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -716,7 +728,7 @@ class _CategoryCarouselState extends State<_CategoryCarousel> {
                 width: 4,
                 height: 24,
                 decoration: BoxDecoration(
-                  color: Colors.teal,
+                  color: colorScheme.primary,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -726,6 +738,7 @@ class _CategoryCarouselState extends State<_CategoryCarousel> {
                 style: GoogleFonts.poppins(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
                 ),
               ),
             ],
@@ -738,18 +751,18 @@ class _CategoryCarouselState extends State<_CategoryCarousel> {
               height: 100,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
+                color: theme.cardColor,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey.shade200),
+                border: Border.all(color: colorScheme.outlineVariant),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.inventory_2_outlined, color: Colors.grey.shade400, size: 32),
+                  Icon(Icons.inventory_2_outlined, color: colorScheme.outline, size: 32),
                   const SizedBox(height: 8),
                   Text(
                     'Nenhum produto nesta categoria',
-                    style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                    style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12),
                   ),
                 ],
               ),
@@ -764,8 +777,8 @@ class _CategoryCarouselState extends State<_CategoryCarousel> {
                 // Calcular índice real usando módulo para criar loop infinito
                 if (widget.products.isEmpty) return const SizedBox();
                 final index = virtualIndex % widget.products.length;
-              final product = widget.products[index];
-              final hasStock = product.quantity > 0;
+                final product = widget.products[index];
+                final hasStock = product.quantity > 0;
               
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -773,10 +786,11 @@ class _CategoryCarouselState extends State<_CategoryCarousel> {
                   width: 160,
                   child: Card(
                     elevation: 2,
-                    shadowColor: Colors.teal.withValues(alpha: 0.15),
+                    shadowColor: colorScheme.primary.withValues(alpha: 0.15),
+                    color: theme.brightness == Brightness.light ? Colors.white : colorScheme.surfaceContainer, // White in light, dark container in dark mode
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: Colors.grey.shade200, width: 1),
+                      side: BorderSide(color: colorScheme.outlineVariant, width: 1),
                     ),
                     clipBehavior: Clip.antiAlias,
                     child: InkWell(
@@ -792,70 +806,65 @@ class _CategoryCarouselState extends State<_CategoryCarousel> {
                                       product.imageUrl,
                                       fit: BoxFit.cover,
                                       errorBuilder: (_, __, ___) => Container(
-                                        color: Colors.grey[200],
-                                        child: const Icon(Icons.medication, color: Colors.grey),
+                                        color: colorScheme.surfaceContainerHighest,
+                                        child: Icon(Icons.medication, color: colorScheme.onSurfaceVariant),
                                       ),
                                     )
                                   : Container(
-                                      color: Colors.grey[200],
-                                      child: const Icon(Icons.medication, color: Colors.grey),
+                                      color: colorScheme.surfaceContainerHighest,
+                                      child: Icon(Icons.medication, color: colorScheme.onSurfaceVariant),
                                     ),
                             ),
                           ),
                           Padding(
-                            padding: const EdgeInsets.all(8.0),
+                            padding: const EdgeInsets.all(12),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   product.name,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: colorScheme.onSurface,
+                                  ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
                                   'R\$ ${product.price.toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    color: Colors.teal,
+                                  style: TextStyle(
+                                    color: colorScheme.primary,
                                     fontWeight: FontWeight.bold,
+                                    fontSize: 16,
                                   ),
                                 ),
                                 const SizedBox(height: 8),
-                                if (hasStock)
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton(
-                                      onPressed: () => widget.onPurchase(product),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.teal,
-                                        foregroundColor: Colors.white,
-                                        padding: EdgeInsets.zero,
-                                        minimumSize: const Size(0, 32),
-                                        textStyle: const TextStyle(fontSize: 12),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: hasStock 
+                                    ? ElevatedButton(
+                                        onPressed: () => widget.onPurchase(product),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: colorScheme.primary,
+                                          foregroundColor: colorScheme.onPrimary,
+                                          padding: const EdgeInsets.symmetric(vertical: 8),
+                                          visualDensity: VisualDensity.compact,
+                                        ),
+                                        child: const Text('Comprar'),
+                                      )
+                                    : OutlinedButton(
+                                        onPressed: null,
+                                        style: OutlinedButton.styleFrom(
+                                          side: BorderSide(color: colorScheme.error),
+                                        ),
+                                        child: Text(
+                                          'Esgotado',
+                                          style: TextStyle(color: colorScheme.error, fontSize: 12),
+                                        ),
                                       ),
-                                      child: const Text('Comprar'),
-                                    ),
-                                  )
-                                else
-                                  Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.symmetric(vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: Colors.red[50],
-                                      borderRadius: BorderRadius.circular(4),
-                                      border: Border.all(color: Colors.red[200]!),
-                                    ),
-                                    child: Text(
-                                      'Esgotado',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.red[700],
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
+                                ),
                               ],
                             ),
                           ),

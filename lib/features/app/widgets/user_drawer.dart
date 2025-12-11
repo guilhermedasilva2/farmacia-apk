@@ -9,6 +9,7 @@ import 'package:meu_app_inicial/features/profile/domain/entities/user_profile.da
 import 'package:meu_app_inicial/features/auth/domain/entities/user_role.dart';
 import 'package:meu_app_inicial/features/app/widgets/role_badge.dart';
 import 'package:meu_app_inicial/utils/app_routes.dart';
+import 'package:meu_app_inicial/main.dart'; // Acesso ao themeController global
 
 
 class UserDrawer extends StatefulWidget {
@@ -66,9 +67,44 @@ class _UserDrawerState extends State<UserDrawer> {
   Future<void> _pick(ImageSource source) async {
     final service = _avatarService ?? await AvatarService.create();
     _avatarService = service;
+    
+    // 1. Pick and process locally
     final path = await service.pickAndProcessAvatar(source: source);
+    if (path == null) return;
+
+    // 2. Optimistic UI update
     if (mounted) {
       setState(() => _avatarPath = path);
+    }
+
+    // 3. Upload to server if authenticated
+    try {
+      final profile = _userProfile;
+      if (profile != null && profile.role.isAuthenticated) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Enviando foto para o servidor...')),
+          );
+        }
+        
+        await service.uploadAvatar(path);
+        
+        // 4. Refresh profile to confirm URL (optional)
+        final updated = await _roleService.getCurrentUserProfile();
+        if (mounted) {
+           setState(() => _userProfile = updated);
+           ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Foto atualizada com sucesso!')),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error uploading avatar: $e');
+       if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Erro ao enviar foto para o servidor.')),
+          );
+        }
     }
   }
 
@@ -185,8 +221,13 @@ class _UserDrawerState extends State<UserDrawer> {
               radius: 32,
               backgroundColor: Theme.of(context).colorScheme.primaryContainer,
               foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
-              backgroundImage: _avatarPath != null ? FileImage(File(_avatarPath!)) : null,
-              child: _avatarPath == null
+              // Prioridade: 1. Caminho Local (Edição recente), 2. URL Remota (Banco), 3. Null (Iniciais)
+              backgroundImage: _avatarPath != null 
+                  ? FileImage(File(_avatarPath!)) 
+                  : (profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
+                      ? NetworkImage(profile.avatarUrl!) as ImageProvider
+                      : null),
+              child: (_avatarPath == null && (profile.avatarUrl == null || profile.avatarUrl!.isEmpty))
                   ? Text(
                       initials,
                       style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -208,7 +249,7 @@ class _UserDrawerState extends State<UserDrawer> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                   Row(
                     children: [
                       avatar,
                       const SizedBox(width: 12),
@@ -307,6 +348,22 @@ class _UserDrawerState extends State<UserDrawer> {
                       ),
                     ],
                     
+                    // Theme Toggle (Positioned below Admin Panel as requested)
+                    ListTile(
+                      leading: Icon(
+                        themeController.isDark ? Icons.dark_mode : Icons.light_mode,
+                        color: themeController.isDark ? Colors.blueAccent : Colors.orange,
+                      ),
+                      title: const Text('Tema Escuro'),
+                      trailing: Switch(
+                        value: themeController.isDark,
+                        onChanged: (val) {
+                          themeController.toggleTheme();
+                          setState(() {}); 
+                        },
+                      ),
+                    ),
+                    
                     // Opções comuns
                     const Divider(height: 1),
                     ListTile(
@@ -338,6 +395,8 @@ class _UserDrawerState extends State<UserDrawer> {
                         Navigator.of(context).pushNamed(AppRoutes.reminders);
                       },
                     ),
+
+
                     
                     // Admin stock management
                     if (profile.role == UserRole.admin) ...[

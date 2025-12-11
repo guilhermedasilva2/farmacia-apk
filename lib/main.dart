@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:meu_app_inicial/core/theme/app_theme.dart';
+import 'package:meu_app_inicial/core/theme/theme_controller.dart';
 import 'package:meu_app_inicial/features/app/home/home_page.dart'; 
 import 'package:meu_app_inicial/features/onboarding/presentation/screens/onboarding_screen.dart'; 
 import 'package:meu_app_inicial/features/onboarding/presentation/screens/splash_screen.dart';
@@ -13,8 +17,9 @@ import 'package:meu_app_inicial/features/categories/presentation/screens/categor
 import 'package:meu_app_inicial/features/orders/presentation/screens/cart_screen.dart';
 import 'package:meu_app_inicial/features/products/presentation/screens/product_details_screen.dart';
 import 'package:meu_app_inicial/utils/app_routes.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+
+// Global access to theme controller (Simple Service Locator pattern)
+final themeController = ThemeController();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +30,7 @@ Future<void> main() async {
       supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty) {
     await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
   }
+  
   runApp(const MyApp());
 }
 
@@ -33,28 +39,32 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'FarmaFox',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.teal, 
-        useMaterial3: true,
-      ),
-      initialRoute: AppRoutes.splash,
-      routes: {
-        AppRoutes.splash: (ctx) => const SplashScreen(),
-        AppRoutes.onboarding: (ctx) => const OnboardingScreen(),
-        AppRoutes.home: (ctx) => const HomeScreen(),
-        AppRoutes.products: (ctx) => const ProductsScreen(),
-        AppRoutes.orders: (ctx) => const CartScreen(),
-        AppRoutes.policy: (ctx) => const PolicyViewerScreen(),
-        AppRoutes.consent: (ctx) => const ConsentScreen(),
-        AppRoutes.reminders: (ctx) => const MedicationReminderListPage(),
-        AppRoutes.auth: (ctx) => const AuthScreen(),
-        AppRoutes.adminProducts: (ctx) => const AdminProductsScreen(),
-        AppRoutes.adminOrders: (ctx) => const AdminOrdersScreen(),
-        AppRoutes.adminCategories: (ctx) => const CategoriesScreen(),
-        AppRoutes.productDetails: (ctx) => const ProductDetailsScreen(),
+    return AnimatedBuilder(
+      animation: themeController,
+      builder: (context, _) {
+        return MaterialApp(
+          title: 'FarmaFox',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: themeController.themeMode,
+          initialRoute: AppRoutes.splash,
+          routes: {
+            AppRoutes.splash: (ctx) => const SplashScreen(),
+            AppRoutes.onboarding: (ctx) => const OnboardingScreen(),
+            AppRoutes.home: (ctx) => const HomeScreen(),
+            AppRoutes.products: (ctx) => const ProductsScreen(),
+            AppRoutes.orders: (ctx) => const CartScreen(),
+            AppRoutes.policy: (ctx) => const PolicyViewerScreen(),
+            AppRoutes.consent: (ctx) => const ConsentScreen(),
+            AppRoutes.reminders: (ctx) => const MedicationReminderListPage(),
+            AppRoutes.auth: (ctx) => const AuthScreen(),
+            AppRoutes.adminProducts: (ctx) => const AdminProductsScreen(),
+            AppRoutes.adminOrders: (ctx) => const AdminOrdersScreen(),
+            AppRoutes.adminCategories: (ctx) => const CategoriesScreen(),
+            AppRoutes.productDetails: (ctx) => const ProductDetailsScreen(),
+          },
+        );
       },
     );
   }
