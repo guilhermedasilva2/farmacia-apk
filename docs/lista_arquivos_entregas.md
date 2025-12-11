@@ -59,9 +59,18 @@
 
 ---
 
-## 🎯 4. Entrega: Metas Diárias (Duas Features)
-**Status:** ⚠️ **Não Implementado / Não Encontrado** neste projeto.
-- *Nota:* Esta entrega não foi localizada no seu código atual. Se você tiver arquivos relacionados, por favor indique. Caso contrário, esta parte está pendente.
+## 🎯 4. Entrega: Metas Diárias (Adaptada: Lembretes de Medicamentos)
+**Status:** ✅ **Implementado**
+**Contexto:** Funcionalidade adaptada para o tema Farmácia. A "meta diária" é o cumprimento da adesão ao tratamento medicamentoso (tomar as doses agendadas).
+
+### 📂 Arquivos Implementados:
+- **Feature Principal:** `lib/features/medication_reminders/`
+- **Listagem e Gestão (Metas):** `lib/features/medication_reminders/presentation/screens/medication_reminders_screen.dart`
+  - Exibe lembretes do dia, status de doses tomadas vs programadas.
+- **Lógica de Progresso:** `lib/features/medication_reminders/domain/entities/medication_reminder.dart`
+  - Campos `totalDoses` e `takenDoses` rastreiam o progresso diário.
+- **Interface de Edição/Criação:** `lib/features/medication_reminders/presentation/widgets/medication_reminder_form_dialog.dart`
+- **Persistência:** `lib/features/medication_reminders/infrastructure/repositories/medication_reminder_repository_impl.dart`
 
 ---
 
