@@ -19,6 +19,13 @@ class OrderRepositoryImpl implements OrderRepository {
       'user_id': order.customerId,
       'total': total,
       'status': _orderStatusToString(order.status),
+      'delivery_address': order.deliveryAddress,
+      'delivery_number': order.deliveryNumber,
+      'delivery_complement': order.deliveryComplement,
+      'delivery_neighborhood': order.deliveryNeighborhood,
+      'delivery_city': order.deliveryCity,
+      'delivery_state': order.deliveryState,
+      'delivery_cep': order.deliveryCep,
     }).select().single();
 
     final orderId = orderResponse['id'] as String;
@@ -27,6 +34,7 @@ class OrderRepositoryImpl implements OrderRepository {
     final orderItems = order.items.map((item) => {
       'order_id': orderId,
       'product_id': item.productId,
+      'name': item.name,
       'quantity': item.quantity,
       'price': item.unitPrice,
     }).toList();
@@ -113,6 +121,13 @@ class OrderRepositoryImpl implements OrderRepository {
         customerId: orderData['user_id'] as String,
         items: items,
         status: _parseOrderStatus(orderData['status'] as String),
+        deliveryAddress: orderData['delivery_address'] as String?,
+        deliveryNumber: orderData['delivery_number'] as String?,
+        deliveryComplement: orderData['delivery_complement'] as String?,
+        deliveryNeighborhood: orderData['delivery_neighborhood'] as String?,
+        deliveryCity: orderData['delivery_city'] as String?,
+        deliveryState: orderData['delivery_state'] as String?,
+        deliveryCep: orderData['delivery_cep'] as String?,
       );
     }).toList();
   }

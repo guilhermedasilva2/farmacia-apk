@@ -6,6 +6,7 @@ import 'package:meu_app_inicial/utils/custom_snackbar.dart';
 import 'package:meu_app_inicial/features/orders/infrastructure/repositories/order_repository_impl.dart';
 import 'package:meu_app_inicial/features/products/infrastructure/dtos/product_dto.dart';
 import 'package:meu_app_inicial/features/products/infrastructure/repositories/product_repository_impl.dart';
+import 'package:meu_app_inicial/features/orders/presentation/widgets/checkout_dialog.dart';
 
 
 class CartScreen extends StatefulWidget {
@@ -50,28 +51,15 @@ class _CartScreenState extends State<CartScreen> {
       return;
     }
 
-    final confirm = await showDialog<bool>(
+    // Formulário de Checkout
+    final checkoutData = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Confirmar Compra'),
-        content: Text(
-          'Deseja confirmar a compra de ${_cartService.itemCount} item(ns) '
-          'no valor total de R\$ ${_cartService.total.toStringAsFixed(2)}?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Confirmar'),
-          ),
-        ],
-      ),
+      builder: (ctx) => const CheckoutDialog(),
     );
 
-    if (confirm != true) return;
+    if (checkoutData == null) return; // Cancelado
+    // (Poderíamos salvar o endereço/pagamento no pedido aqui se a entidade suportasse)
+
 
     setState(() {
       _isProcessing = true;
@@ -93,6 +81,13 @@ class _CartScreenState extends State<CartScreen> {
         customerId: currentUser.id,
         items: orderItems,
         status: OrderStatus.pending,
+        deliveryAddress: checkoutData['delivery_address'] as String?,
+        deliveryNumber: checkoutData['delivery_number'] as String?,
+        deliveryComplement: checkoutData['delivery_complement'] as String?,
+        deliveryNeighborhood: checkoutData['delivery_neighborhood'] as String?,
+        deliveryCity: checkoutData['delivery_city'] as String?,
+        deliveryState: checkoutData['delivery_state'] as String?,
+        deliveryCep: checkoutData['delivery_cep'] as String?,
       );
 
       final orderRepo = OrderRepositoryImpl();
@@ -394,7 +389,8 @@ class _CartScreenState extends State<CartScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).scaffoldBackgroundColor, // Seamless with scaffold or use surface
+                    border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.1),

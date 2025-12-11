@@ -21,13 +21,54 @@ class Order {
   final String customerId;
   final List<OrderItem> items;
   final OrderStatus status;
+  
+  // Campos de endereço de entrega
+  final String? deliveryAddress;
+  final String? deliveryNumber;
+  final String? deliveryComplement;
+  final String? deliveryNeighborhood;
+  final String? deliveryCity;
+  final String? deliveryState;
+  final String? deliveryCep;
 
   const Order({
     required this.id,
     required this.customerId,
     required this.items,
     required this.status,
+    this.deliveryAddress,
+    this.deliveryNumber,
+    this.deliveryComplement,
+    this.deliveryNeighborhood,
+    this.deliveryCity,
+    this.deliveryState,
+    this.deliveryCep,
   });
 
   double get total => items.fold(0.0, (sum, it) => sum + it.total);
+  
+  /// Retorna endereço completo formatado
+  String get fullAddress {
+    if (deliveryAddress == null) return 'Endereço não informado';
+    
+    final parts = <String>[];
+    parts.add(deliveryAddress!);
+    if (deliveryNumber != null && deliveryNumber!.isNotEmpty) {
+      parts.add(deliveryNumber!);
+    }
+    if (deliveryComplement != null && deliveryComplement!.isNotEmpty) {
+      parts.add(deliveryComplement!);
+    }
+    if (deliveryNeighborhood != null && deliveryNeighborhood!.isNotEmpty) {
+      parts.add(deliveryNeighborhood!);
+    }
+    if (deliveryCity != null && deliveryState != null) {
+      parts.add('${deliveryCity!} - ${deliveryState!}');
+    }
+    if (deliveryCep != null && deliveryCep!.isNotEmpty) {
+      parts.add('CEP: ${deliveryCep!}');
+    }
+    
+    return parts.join(', ');
+  }
 }
