@@ -13,7 +13,16 @@ class AdminOrdersScreen extends StatefulWidget {
 class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
   final OrderRepository _repository = OrderRepositoryImpl();
   List<Order> _orders = [];
+  List<Order> _filteredOrders = [];
   bool _isLoading = true;
+  OrderStatus? _filterStatus;
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -28,6 +37,7 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
       if (mounted) {
         setState(() {
           _orders = orders;
+          _applyFilters();
           _isLoading = false;
         });
       }
@@ -39,6 +49,23 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
         );
       }
     }
+  }
+
+  void _applyFilters() {
+    _filteredOrders = _orders.where((order) {
+      // Filtro por status
+      if (_filterStatus != null && order.status != _filterStatus) {
+        return false;
+      }
+      
+      // Busca por ID
+      final searchTerm = _searchController.text.toLowerCase();
+      if (searchTerm.isNotEmpty && !order.id.toLowerCase().contains(searchTerm)) {
+        return false;
+      }
+      
+      return true;
+    }).toList();
   }
 
   Future<void> _showOrderDetails(Order order) async {
@@ -146,6 +173,37 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
                         ),
                       ],
                     ),
+                    // Endereço de Entrega
+                    if (order.deliveryAddress != null) ...[
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Endereço de Entrega:',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.location_on, size: 20, color: Colors.teal),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                order.fullAddress,
+                                style: TextStyle(color: Colors.grey[800]),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -314,22 +372,110 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
         backgroundColor: Colors.teal,
         foregroundColor: Colors.white,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _orders.isEmpty
-              ? const Center(child: Text('Nenhum pedido encontrado.'))
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _orders.length,
-                  itemBuilder: (context, index) {
-                    final order = _orders[index];
-                    return _OrderListItem(
-                      order: order,
-                      repository: _repository,
-                      onTap: () => _showOrderDetails(order),
-                    );
-                  },
+      body: Column(
+        children: [
+          // Filtros e Busca
+          Container(
+            padding: const EdgeInsets.all(16),
+            color: Colors.grey[100],
+            child: Column(
+              children: [
+                // Busca por ID
+                TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Buscar por ID do pedido',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _applyFilters());
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
+                  onChanged: (value) => setState(() => _applyFilters()),
                 ),
+                const SizedBox(height: 12),
+                // Filtro por Status
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      FilterChip(
+                        label: const Text('Todos'),
+                        selected: _filterStatus == null,
+                        onSelected: (selected) {
+                          setState(() {
+                            _filterStatus = null;
+                            _applyFilters();
+                          });
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      ...OrderStatus.values.map((status) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: FilterChip(
+                            label: Text(_repository.getStatusDisplayName(status)),
+                            selected: _filterStatus == status,
+                            onSelected: (selected) {
+                              setState(() {
+                                _filterStatus = selected ? status : null;
+                                _applyFilters();
+                              });
+                            },
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Lista de Pedidos
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _filteredOrders.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.inbox, size: 64, color: Colors.grey[400]),
+                            const SizedBox(height: 16),
+                            Text(
+                              _searchController.text.isNotEmpty || _filterStatus != null
+                                  ? 'Nenhum pedido encontrado com os filtros aplicados'
+                                  : 'Nenhum pedido encontrado',
+                              style: TextStyle(color: Colors.grey[600]),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _filteredOrders.length,
+                        itemBuilder: (context, index) {
+                          final order = _filteredOrders[index];
+                          return _OrderListItem(
+                            order: order,
+                            repository: _repository,
+                            onTap: () => _showOrderDetails(order),
+                          );
+                        },
+                      ),
+          ),
+        ],
+      ),
     );
   }
 }

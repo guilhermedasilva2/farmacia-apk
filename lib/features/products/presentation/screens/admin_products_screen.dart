@@ -299,11 +299,18 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
         foregroundColor: Colors.white,
         child: const Icon(Icons.add),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _products.isEmpty
-              ? const Center(child: Text('Nenhum produto cadastrado.'))
-              : GridView.builder(
+      body: RefreshIndicator(
+        onRefresh: _loadProducts,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _products.isEmpty
+                ? ListView(
+                    children: const [
+                      SizedBox(height: 100),
+                      Center(child: Text('Nenhum produto cadastrado.')),
+                    ],
+                  )
+                : GridView.builder(
                   padding: const EdgeInsets.all(16),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
@@ -319,7 +326,8 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                       onTap: () => _showProductDetails(product),
                     );
                   },
-                ),
+                  ),
+      ),
     );
   }
 }
