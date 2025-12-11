@@ -5,6 +5,7 @@ import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AvatarService {
   static const String _prefsAvatarPathKey = 'user_avatar_path_v1';
@@ -12,10 +13,15 @@ class AvatarService {
 
   final ImagePicker _picker;
   final SharedPreferences _prefs;
+  final SupabaseClient? _client;
 
-  AvatarService({ImagePicker? picker, required SharedPreferences prefs})
-      : _picker = picker ?? ImagePicker(),
-        _prefs = prefs;
+  AvatarService({
+    ImagePicker? picker, 
+    required SharedPreferences prefs,
+    SupabaseClient? client,
+  })  : _picker = picker ?? ImagePicker(),
+        _prefs = prefs,
+        _client = client ?? Supabase.instance.client;
 
   static Future<AvatarService> create() async {
     final prefs = await SharedPreferences.getInstance();
@@ -76,6 +82,40 @@ class AvatarService {
 
     await _prefs.setString(_prefsAvatarPathKey, filePath);
     return filePath;
+  }
+
+  /// Uploads the avatar file to Supabase Storage and updates the user profile
+  Future<String?> uploadAvatar(String filePath) async {
+    if (_client == null) return null;
+    final user = _client.auth.currentUser;
+    if (user == null) return null;
+
+    try {
+      final file = File(filePath);
+      final fileExt = filePath.split('.').last;
+      final fileName = '${user.id}/avatar.$fileExt';
+      
+      // Upload to 'avatars' bucket
+      await _client.storage.from('avatars').upload(
+        fileName,
+        file,
+        fileOptions: const FileOptions(upsert: true),
+      );
+
+      // Get Public URL
+      final publicUrl = _client.storage.from('avatars').getPublicUrl(fileName);
+      
+      // Update profile
+      await _client.from('profiles').update({
+        'avatar_url': publicUrl,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', user.id);
+
+      return publicUrl;
+    } catch (e) {
+      debugPrint('Error uploading avatar: $e');
+      return null;
+    }
   }
 }
 

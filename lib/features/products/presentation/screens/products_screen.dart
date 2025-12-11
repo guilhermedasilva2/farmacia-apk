@@ -70,8 +70,25 @@ class _ProductsScreenState extends State<ProductsScreen> {
     );
     setState(() {
       _repository = repo;
-      _future = repo.fetchProducts();
+      // Requisito: Carregar do cache PRIMEIRO (Offline-first)
+      _future = repo.loadFromCache();
     });
+    
+    // Sincronizar em background após carregar o cache
+    _syncAndUpdate(repo);
+  }
+
+  Future<void> _syncAndUpdate(ProductRepository repo) async {
+    try {
+      await repo.syncFromServer();
+      if (mounted) {
+        setState(() {
+          _future = repo.loadFromCache();
+        });
+      }
+    } catch (e) {
+      debugPrint('Sync error on init: $e');
+    }
   }
 
   @override

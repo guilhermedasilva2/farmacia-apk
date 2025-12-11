@@ -176,3 +176,60 @@ CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXEC
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
+
+-- ============================================
+-- 5. STORAGE (AVATARS)
+-- ============================================
+
+-- Nota: A criação de Buckets geralmente é feita via Dashboard ou API, mas segue o SQL para referência se a extensão pg_net/storage estiver habilitada.
+-- Se executado no SQL Editor do Supabase, o bucket será criado.
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Políticas de Storage para o bucket 'avatars'
+CREATE POLICY "Avatar images are publicly accessible"
+ON storage.objects FOR SELECT
+USING ( bucket_id = 'avatars' );
+
+CREATE POLICY "Anyone can upload an avatar"
+ON storage.objects FOR INSERT
+WITH CHECK ( bucket_id = 'avatars' AND auth.role() = 'authenticated' );
+
+CREATE POLICY "Anyone can update their own avatar"
+ON storage.objects FOR UPDATE
+USING ( bucket_id = 'avatars' AND auth.uid() = owner )
+WITH CHECK ( bucket_id = 'avatars' AND auth.uid() = owner );
+
+CREATE POLICY "Anyone can delete their own avatar"
+ON storage.objects FOR DELETE
+USING ( bucket_id = 'avatars' AND auth.uid() = owner );
+
+-- ============================================
+-- 6. Medication Reminders
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS medication_reminders (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  medication_name TEXT NOT NULL,
+  dosage TEXT,
+  notes TEXT,
+  scheduled_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  total_doses INTEGER DEFAULT 1,
+  taken_doses INTEGER DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Policies for Medication Reminders
+ALTER TABLE medication_reminders ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own reminders" ON medication_reminders FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can create own reminders" ON medication_reminders FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own reminders" ON medication_reminders FOR UPDATE USING (user_id = auth.uid());
+CREATE POLICY "Users can delete own reminders" ON medication_reminders FOR DELETE USING (user_id = auth.uid());
+
+CREATE INDEX IF NOT EXISTS idx_medication_user ON medication_reminders(user_id);
+CREATE TRIGGER update_medication_updated_at BEFORE UPDATE ON medication_reminders FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

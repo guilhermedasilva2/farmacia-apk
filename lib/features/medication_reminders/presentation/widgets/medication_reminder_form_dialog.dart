@@ -10,7 +10,7 @@ Future<MedicationReminder?> showMedicationReminderFormDialog(
   MedicationReminder? initialReminder,
   MedicationReminderRepository? repository,
 }) async {
-  final repo = repository ?? await SharedPreferencesMedicationReminderRepository.create();
+  final repo = repository ?? await CachedMedicationReminderRepository.create();
   if (!context.mounted) return null;
   return showDialog<MedicationReminder>(
     context: context,

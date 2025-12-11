@@ -53,7 +53,7 @@ class _MedicationReminderListPageState extends State<MedicationReminderListPage>
   }
 
   Future<void> _initRepository() async {
-    final repo = await SharedPreferencesMedicationReminderRepository.create();
+    final repo = await CachedMedicationReminderRepository.create();
     if (!mounted) return;
     setState(() {
       _repository = repo;

@@ -32,9 +32,9 @@ class MedicationReminderMapper {
       dosage: entity.dosage.isEmpty ? null : entity.dosage,
       notes: entity.notes.isEmpty ? null : entity.notes,
       scheduledAtIso: entity.scheduledAt.toIso8601String(),
-      isTaken: entity.isTaken,
       totalDoses: entity.totalDoses,
       takenDoses: entity.takenDoses,
+      updatedAt: null, // Entidade não rastreia isso ainda
     );
   }
 }

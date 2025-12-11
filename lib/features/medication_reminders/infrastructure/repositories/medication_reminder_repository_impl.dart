@@ -1,95 +1,217 @@
 import 'dart:convert';
 
-import 'package:meu_app_inicial/features/medication_reminders/infrastructure/dtos/medication_reminder_dto.dart';
-import 'package:meu_app_inicial/features/medication_reminders/infrastructure/mappers/medication_reminder_mapper.dart';
+import 'package:flutter/foundation.dart';
 import 'package:meu_app_inicial/features/medication_reminders/domain/entities/medication_reminder.dart';
 import 'package:meu_app_inicial/features/medication_reminders/domain/repositories/medication_reminder_repository.dart';
+import 'package:meu_app_inicial/features/medication_reminders/infrastructure/dtos/medication_reminder_dto.dart';
+import 'package:meu_app_inicial/features/medication_reminders/infrastructure/mappers/medication_reminder_mapper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
-class InMemoryMedicationReminderRepository implements MedicationReminderRepository {
-  InMemoryMedicationReminderRepository({List<MedicationReminder>? seed})
-      : _storage = {for (final reminder in seed ?? const []) reminder.id: reminder};
+// ==========================================
+// REMOTE DATA SOURCE (Supabase)
+// ==========================================
+class MedicationReminderRemoteDataSource {
+  final SupabaseClient _client;
+  static const String tableName = 'medication_reminders';
 
-  final Map<String, MedicationReminder> _storage;
-  static const _uuid = Uuid();
+  MedicationReminderRemoteDataSource({SupabaseClient? client})
+      : _client = client ?? Supabase.instance.client;
 
-  @override
-  Future<List<MedicationReminder>> listReminders() async {
-    final list = _storage.values.toList(growable: false)
-      ..sort((a, b) {
-        final takenComparison = (a.isTaken ? 1 : 0).compareTo(b.isTaken ? 1 : 0);
-        if (takenComparison != 0) return takenComparison;
-        return a.scheduledAt.compareTo(b.scheduledAt);
-      });
-    return list;
+  Future<List<MedicationReminderDto>> fetchAll() async {
+    final response = await _client.from(tableName).select();
+    final list = response as List;
+    return list
+        .map((e) => MedicationReminderDto.fromMap(e as Map<String, dynamic>))
+        .toList();
   }
 
-  @override
-  Future<MedicationReminder> upsertReminder(MedicationReminder reminder) async {
-    final id = reminder.id.isEmpty ? _uuid.v4() : reminder.id;
-    final normalized = reminder.copyWith(id: id);
-    _storage[id] = normalized;
-    return normalized;
+  Future<void> upsert(MedicationReminderDto dto) async {
+    final user = _client.auth.currentUser;
+    if (user == null) throw Exception('User not logged in');
+
+    final map = dto.toMap();
+    map['user_id'] = user.id; // Inject user_id
+    map.remove('updated_at'); // Let DB handle this via trigger
+
+    await _client.from(tableName).upsert(map);
   }
 
-  @override
-  Future<void> deleteReminder(String id) async {
-    _storage.remove(id);
+  Future<void> delete(String id) async {
+    await _client.from(tableName).delete().eq('id', id);
   }
 }
 
-class SharedPreferencesMedicationReminderRepository implements MedicationReminderRepository {
-  SharedPreferencesMedicationReminderRepository({required SharedPreferences prefs}) : _prefs = prefs;
-
+// ==========================================
+// LOCAL DATA SOURCE (SharedPreferences)
+// ==========================================
+class MedicationReminderLocalDataSource {
   final SharedPreferences _prefs;
-  static const String _cacheKey = 'medication_reminders_cache_v1';
-  static const _uuid = Uuid();
+  static const String _storageKey = 'medication_reminders_v2';
+  static const String _deletedQueueKey = 'medication_reminders_deleted_queue';
 
-  static Future<SharedPreferencesMedicationReminderRepository> create() async {
+  MedicationReminderLocalDataSource(this._prefs);
+
+  Future<List<MedicationReminderDto>> readAll() async {
+    final raw = _prefs.getString(_storageKey);
+    if (raw == null) return [];
+    try {
+      final List decoded = jsonDecode(raw);
+      return decoded
+          .map((e) => MedicationReminderDto.fromMap(e as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      debugPrint('Error reading local reminders: $e');
+      return [];
+    }
+  }
+
+  Future<void> saveAll(List<MedicationReminderDto> dtos) async {
+    final raw = jsonEncode(dtos.map((e) => e.toMap()).toList());
+    await _prefs.setString(_storageKey, raw);
+  }
+
+  Future<void> queueDeletion(String id) async {
+    final list = _prefs.getStringList(_deletedQueueKey) ?? [];
+    if (!list.contains(id)) {
+      list.add(id);
+      await _prefs.setStringList(_deletedQueueKey, list);
+    }
+  }
+
+  Future<List<String>> getDeletionQueue() async {
+    return _prefs.getStringList(_deletedQueueKey) ?? [];
+  }
+
+  Future<void> clearDeletionQueue() async {
+    await _prefs.remove(_deletedQueueKey);
+  }
+}
+
+// ==========================================
+// REPOSITORY IMPLEMENTATION
+// ==========================================
+class CachedMedicationReminderRepository implements MedicationReminderRepository {
+  final MedicationReminderRemoteDataSource _remote;
+  final MedicationReminderLocalDataSource _local;
+  final Uuid _uuid = const Uuid();
+
+  CachedMedicationReminderRepository({
+    MedicationReminderRemoteDataSource? remote,
+    required MedicationReminderLocalDataSource local,
+  })  : _remote = remote ?? MedicationReminderRemoteDataSource(),
+        _local = local;
+
+  static Future<CachedMedicationReminderRepository> create() async {
     final prefs = await SharedPreferences.getInstance();
-    return SharedPreferencesMedicationReminderRepository(prefs: prefs);
+    return CachedMedicationReminderRepository(
+      local: MedicationReminderLocalDataSource(prefs),
+    );
   }
 
   @override
   Future<List<MedicationReminder>> listReminders() async {
-    final raw = _prefs.getString(_cacheKey);
-    if (raw == null || raw.isEmpty) return [];
+    // 1. Load from local cache (Offline-first)
+    final localDtos = await _local.readAll();
+    final entities = localDtos.map(MedicationReminderMapper.toEntity).toList();
+    
+    // Sort
+    entities.sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
+    
+    // Trigger background sync (fire and forget)
+    _syncInBackground();
+
+    return entities;
+  }
+
+  Future<void> _syncInBackground() async {
     try {
-      final decoded = jsonDecode(raw) as List<dynamic>;
-      final entities = decoded
-          .map((e) => MedicationReminderMapper.toEntity(
-                MedicationReminderDto.fromMap(Map<String, dynamic>.from(e as Map)),
-              ))
-          .toList(growable: false);
-      entities.sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
-      return entities;
-    } catch (_) {
-      return [];
+      await syncFromServer();
+    } catch (e) {
+      debugPrint('Background sync failed: $e');
+    }
+  }
+
+  Future<void> syncFromServer() async {
+    // 1. Process Deletions
+    final deletions = await _local.getDeletionQueue();
+    for (final id in deletions) {
+      try {
+        await _remote.delete(id);
+      } catch (e) {
+        debugPrint('Failed to sync deletion for $id: $e');
+      }
+    }
+    await _local.clearDeletionQueue();
+
+    // 2. Push Local Changes (Upsert all for simplicity, or could track dirty)
+    // For now, we push ALL local items to ensure server is strictly consistent
+    final localDtos = await _local.readAll();
+    for (final dto in localDtos) {
+      try {
+        await _remote.upsert(dto);
+      } catch (e) {
+        debugPrint('Failed to sync upsert for ${dto.id}: $e');
+      }
+    }
+
+    // 3. Pull Remote Changes
+    try {
+      final remoteDtos = await _remote.fetchAll();
+      // Update Local
+      await _local.saveAll(remoteDtos);
+    } catch (e) {
+      debugPrint('Failed to pull remote reminders: $e');
     }
   }
 
   @override
   Future<MedicationReminder> upsertReminder(MedicationReminder reminder) async {
-    final current = await listReminders();
-    final Map<String, MedicationReminder> indexed = {for (final r in current) r.id: r};
-    final String id = reminder.id.isEmpty ? _uuid.v4() : reminder.id;
+    // 1. Generate ID if needed
+    final id = reminder.id.isEmpty ? _uuid.v4() : reminder.id;
     final normalized = reminder.copyWith(id: id);
-    indexed[id] = normalized;
-    final payload =
-        indexed.values.map((e) => MedicationReminderMapper.toDto(e).toMap()).toList(growable: false);
-    await _prefs.setString(_cacheKey, jsonEncode(payload));
+
+    // 2. Save Local
+    final currentDtos = await _local.readAll();
+    final index = currentDtos.indexWhere((d) => d.id == id);
+    final dto = MedicationReminderMapper.toDto(normalized);
+
+    final List<MedicationReminderDto> newDtos = List.from(currentDtos);
+    if (index >= 0) {
+      newDtos[index] = dto;
+    } else {
+      newDtos.add(dto);
+    }
+    await _local.saveAll(newDtos);
+
+    // 3. Try Remote (Best effort)
+    try {
+      await _remote.upsert(dto);
+    } catch (e) {
+      debugPrint('Offline: Saved locally, will sync later. Error: $e');
+    }
+
     return normalized;
   }
 
   @override
   Future<void> deleteReminder(String id) async {
-    final current = await listReminders();
-    final remaining = current.where((reminder) => reminder.id != id).toList(growable: false);
-    final payload =
-        remaining.map((e) => MedicationReminderMapper.toDto(e).toMap()).toList(growable: false);
-    await _prefs.setString(_cacheKey, jsonEncode(payload));
+    // 1. Remove Local
+    final currentDtos = await _local.readAll();
+    final newDtos = currentDtos.where((d) => d.id != id).toList();
+    await _local.saveAll(newDtos);
+
+    // 2. Queue Deletion
+    await _local.queueDeletion(id);
+
+    // 3. Try Remote
+    try {
+      await _remote.delete(id);
+      // If successful, remove from queue?
+      // For simplicity, we just clear queue on next sync
+    } catch (e) {
+      debugPrint('Offline: Delete queued. Error: $e');
+    }
   }
 }
-
-

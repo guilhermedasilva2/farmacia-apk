@@ -10,7 +10,8 @@ void main() {
       dosage: '500mg',
       notes: 'Tomar com água',
       scheduledAtIso: '2025-01-01T08:00:00.000Z',
-      isTaken: true,
+      totalDoses: 1,
+      takenDoses: 1, // isTaken derived from this
     );
 
     final entity = MedicationReminderMapper.toEntity(dto);
@@ -21,6 +22,7 @@ void main() {
     final back = MedicationReminderMapper.toDto(entity);
     expect(back.medicationName, 'Amoxicilina');
     expect(back.dosage, '500mg');
+    expect(back.takenDoses, 1);
     expect(back.isTaken, true);
   });
 }
