@@ -70,6 +70,12 @@ class RoleBadge extends StatelessWidget {
           icon: Icons.admin_panel_settings,
           tooltip: 'Administrador - Acesso total',
         );
+      case UserRole.employee:
+        return _RoleConfig(
+          color: Colors.indigo,
+          icon: Icons.badge,
+          tooltip: 'Funcionário - Gestão operacional',
+        );
     }
   }
 }

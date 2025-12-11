@@ -16,6 +16,10 @@ import 'package:meu_app_inicial/features/orders/presentation/screens/admin_order
 import 'package:meu_app_inicial/features/categories/presentation/screens/categories_screen.dart';
 import 'package:meu_app_inicial/features/orders/presentation/screens/cart_screen.dart';
 import 'package:meu_app_inicial/features/products/presentation/screens/product_details_screen.dart';
+import 'package:meu_app_inicial/features/admin/presentation/screens/admin_dashboard_screen.dart';
+import 'package:meu_app_inicial/features/orders/presentation/screens/order_list_screen.dart';
+import 'package:meu_app_inicial/features/orders/presentation/screens/order_details_screen.dart';
+import 'package:meu_app_inicial/features/admin/presentation/screens/admin_users_screen.dart';
 import 'package:meu_app_inicial/utils/app_routes.dart';
 
 // Global access to theme controller (Simple Service Locator pattern)
@@ -54,15 +58,19 @@ class MyApp extends StatelessWidget {
             AppRoutes.onboarding: (ctx) => const OnboardingScreen(),
             AppRoutes.home: (ctx) => const HomeScreen(),
             AppRoutes.products: (ctx) => const ProductsScreen(),
-            AppRoutes.orders: (ctx) => const CartScreen(),
+            AppRoutes.cart: (ctx) => const CartScreen(), // Explicit Cart Route
+            AppRoutes.orders: (ctx) => const OrderListScreen(), // History
             AppRoutes.policy: (ctx) => const PolicyViewerScreen(),
             AppRoutes.consent: (ctx) => const ConsentScreen(),
             AppRoutes.reminders: (ctx) => const MedicationReminderListPage(),
             AppRoutes.auth: (ctx) => const AuthScreen(),
+            AppRoutes.adminDashboard: (ctx) => const AdminDashboardScreen(), // New Dashboard
             AppRoutes.adminProducts: (ctx) => const AdminProductsScreen(),
             AppRoutes.adminOrders: (ctx) => const AdminOrdersScreen(),
             AppRoutes.adminCategories: (ctx) => const CategoriesScreen(),
             AppRoutes.productDetails: (ctx) => const ProductDetailsScreen(),
+            AppRoutes.orderDetails: (ctx) => const OrderDetailsScreen(),
+            AppRoutes.adminUsers: (ctx) => const AdminUsersScreen(),
           },
         );
       },

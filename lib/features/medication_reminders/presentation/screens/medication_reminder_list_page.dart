@@ -148,7 +148,9 @@ class _MedicationReminderListPageState extends State<MedicationReminderListPage>
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.teal[50],
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Theme.of(context).colorScheme.surfaceContainerHighest
+                      : Colors.teal[50],
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                 ),
                 child: Column(
@@ -337,7 +339,7 @@ class _MedicationReminderListPageState extends State<MedicationReminderListPage>
                   padding: const EdgeInsets.all(24),
                   child: Material(
                     borderRadius: BorderRadius.circular(16),
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.surfaceContainerHigh,
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
@@ -370,6 +372,7 @@ class _MedicationReminderListPageState extends State<MedicationReminderListPage>
           if (_showTips)
             Positioned(
               right: 24,
+              left: 32, // Prevent overflow to the left
               bottom: 96,
               child: SlideTransition(
                 position: _tipOffset,
@@ -491,7 +494,7 @@ class _TipBubble extends StatelessWidget {
     return Material(
       elevation: 4,
       borderRadius: BorderRadius.circular(12),
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surfaceContainer,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

@@ -341,9 +341,7 @@ class _UserDrawerState extends State<UserDrawer> {
                         subtitle: const Text('Gerenciar produtos e usuários'),
                         onTap: () {
                           Navigator.of(context).pop();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Painel admin em desenvolvimento')),
-                          );
+                          Navigator.of(context).pushNamed(AppRoutes.adminDashboard);
                         },
                       ),
                     ],
@@ -378,8 +376,8 @@ class _UserDrawerState extends State<UserDrawer> {
                     if (isAuthenticated) ...[
                       ListTile(
                         leading: const Icon(Icons.shopping_bag_outlined),
-                        title: const Text('Meus Pedidos'),
-                        subtitle: const Text('Veja seus produtos para comprar'),
+                        title: const Text('Meus Pedidos (Histórico)'),
+                        subtitle: const Text('Acompanhe suas compras'),
                         onTap: () {
                           Navigator.of(context).pop();
                           Navigator.of(context).pushNamed(AppRoutes.orders);
@@ -399,11 +397,12 @@ class _UserDrawerState extends State<UserDrawer> {
 
                     
                     // Admin stock management
-                    if (profile.role == UserRole.admin) ...[
+                    if (profile.role.canManageProducts) ...[
+                      const Divider(height: 1),
                       ListTile(
                         leading: const Icon(Icons.inventory_2_outlined, color: Colors.orange),
                         title: const Text('Gerenciar Estoque'),
-                        subtitle: const Text('Controle de produtos (Admin)'),
+                        subtitle: const Text('Controle de produtos'),
                         onTap: () {
                           Navigator.of(context).pop();
                           Navigator.of(context).pushNamed(AppRoutes.adminProducts);
@@ -412,7 +411,7 @@ class _UserDrawerState extends State<UserDrawer> {
                       ListTile(
                         leading: const Icon(Icons.shopping_cart_outlined, color: Colors.orange),
                         title: const Text('Gerenciar Pedidos'),
-                        subtitle: const Text('Visualizar e gerenciar pedidos (Admin)'),
+                        subtitle: const Text('Visualizar e gerenciar pedidos'),
                         onTap: () {
                           Navigator.of(context).pop();
                           Navigator.of(context).pushNamed(AppRoutes.adminOrders);
@@ -421,14 +420,14 @@ class _UserDrawerState extends State<UserDrawer> {
                       ListTile(
                         leading: const Icon(Icons.category_outlined, color: Colors.orange),
                         title: const Text('Gerenciar Categorias'),
-                        subtitle: const Text('Organizar produtos por categorias (Admin)'),
+                        subtitle: const Text('Organizar produtos'),
                         onTap: () {
                           Navigator.of(context).pop();
                           Navigator.of(context).pushNamed(AppRoutes.adminCategories);
                         },
                       ),
                     ],
-                    
+
                     // Logout para usuários autenticados
                     if (isAuthenticated) ...[
                       const Divider(height: 1),

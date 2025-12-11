@@ -288,7 +288,7 @@ class _HomeScreenState extends State<HomeScreen> {
               IconButton(
                 icon: const Icon(Icons.shopping_bag_outlined),
                 onPressed: () {
-                  Navigator.of(context).pushNamed(AppRoutes.orders);
+                  Navigator.of(context).pushNamed(AppRoutes.cart);
                 },
               ),
               if (_cartService.itemCount > 0)

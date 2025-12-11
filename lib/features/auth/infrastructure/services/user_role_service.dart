@@ -107,6 +107,34 @@ class UserRoleService {
   }
 
   /// Stream que emite o perfil do usuário quando há mudanças na autenticação
+  /// Lista todos os usuários (apenas para admin)
+  Future<List<UserProfile>> getAllUsers() async {
+    try {
+      final response = await _client
+          .from('profiles')
+          .select()
+          .order('role', ascending: false) // Admins first
+          .order('display_name', ascending: true);
+      
+      return (response as List).map((json) => UserProfile.fromJson(json)).toList();
+    } catch (e) {
+      debugPrint('Error fetching all users: $e');
+      return [];
+    }
+  }
+
+  /// Atualiza o role de um usuário (apenas para admin)
+  Future<void> updateUserRole(String userId, UserRole newRole) async {
+    try {
+      await _client.from('profiles').update({
+        'role': newRole.toShortString(),
+      }).eq('id', userId);
+    } catch (e) {
+      debugPrint('Error updating user role: $e');
+      rethrow;
+    }
+  }
+
   Stream<UserProfile> get userProfileStream {
     return _client.auth.onAuthStateChange.asyncMap((event) async {
       final user = event.session?.user;

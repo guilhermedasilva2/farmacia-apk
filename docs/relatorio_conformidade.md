@@ -12,6 +12,7 @@ Este relatório detalha a análise do projeto atual em relação aos requisitos 
   - `infrastructure/dtos`: `ProductDto` (Objeto de transferência).
   - `infrastructure/mappers`: `ProductMapper` (Conversão Entidade ↔ DTO).
   - `presentation`: Telas e Diálogos separados da lógica de dados.
+- O mesmo padrão foi replicado com sucesso para a feature **Medication Reminders**, demonstrando a escalabilidade da arquitetura.
 
 ## 2. Persistência e Sincronização (Entidade: Product)
 **Status: ✅ Conforme (com observação menor)**
@@ -47,10 +48,19 @@ A entidade `Product` implementa os fluxos visuais exigidos:
 - **Prompt 11 (Remoção)**: Botão REMOVER (e Swipe para Admin) exibe diálogo de confirmação antes de excluir.
 - **Navegação**: Acesso garantido via Drawer (menu lateral) para diferentes funcionalidades (`UserDrawer` implementado).
 
-## 5. Itens Pendentes / Ações Finais
-Para finalizar a entrega com excelência, sugere-se:
-1. **Ajuste de Inicialização**: Modificar `ProductsScreen.dart` para usar `loadFromCache()` no `initState` para garantir a experiência "Offline-First" estrita.
-2. **Relatório Reflexivo**: O aluno deve escrever o relatório sobre o uso de IA.
-3. **Vídeo e Apresentação**: Preparar os entregáveis não-técnicos (vídeo de demonstração e slides).
+## 5. Melhorias Visuais e Temáticas (Extra)
+**Status: ✅ Conforme**
+Além dos requisitos funcionais, foram realizadas melhorias significativas na experiência do usuário (UX/UI):
+- **Identidade Visual**: Restauração das cores originais (Teal/Cyan) para manter a identidade da marca, com ajustes de contraste.
+- **Modo Escuro (Dark Mode)**: Implementação completa de tema escuro, com persistência da preferência do usuário e adaptação automática de todos os componentes (Cards, Drawer, Textos).
+- **Refinamento de UI**: Ajustes no Menu Lateral (Drawer) e nos Cards de Produto para maior clareza e estética.
 
-O código está tecnicamente robusto e segue as boas práticas exigidas em aula.
+## 6. O que falta?
+**Status: 🚀 Pronto para Entrega**
+Todos os requisitos técnicos e funcionais foram atendidos.
+1. **Ajuste de Inicialização**: ✅ Realizado (`ProductsScreen` inicia carregando do cache).
+2. **Relatório Reflexivo**: ✅ Elaborado (`docs/relatorio_ia_reflexivo.md`).
+3. **Persistência de Lembretes**: ✅ Implementada (Supabase + Local).
+
+O projeto está robusto, com Clean Architecture, funcionamento offline-first e visual polido.
+
